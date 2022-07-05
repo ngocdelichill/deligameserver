@@ -9,7 +9,7 @@ exports.test = function (req, res) {
 exports.search = async function(req,res){
     const {keyword} = req.query;
     if(typeof keyword === 'string'){
-        const user = await User.find({$or : [{name:{'$regex': keyword}},{phone:{'$regex':keyword}},{email:{'$regex':keyword}}]});
+        const user = await User.find({$or : [{name:{'$regex': keyword,$options:'i'}},{phone:{'$regex':keyword,$options:'i'}},{email:{'$regex':keyword,$options:'i'}}]});
         res.send(user);
     }else{
         res.send([]);
