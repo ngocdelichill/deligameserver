@@ -11,7 +11,7 @@ exports.search = async function(req,res){
     const {keyword} = req.query;
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    if(typeof keyword === 'string'){
+    if(typeof keyword === 'string' && keyword.length > 0){
         const user = await User.aggregate([
           {
               $match: {
@@ -21,11 +21,19 @@ exports.search = async function(req,res){
               }
           },
             { "$addFields": { "userId": { "$toString": "$_id" }}},
+        
             { "$lookup": {
               "from": "friends",
               "localField": "userId",
               "foreignField": "userId",
-              "as": "friend"
+              "as": "friend",
+              "pipeline" : [
+                {
+                  "$match" : {
+                    "creator" : decoded.user_id
+                  }
+                }
+              ]
             }, 
           },
           {$match : {"userId":{$ne:decoded.user_id}}}
