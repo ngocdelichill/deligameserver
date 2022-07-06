@@ -7,7 +7,7 @@ const friend = require('../controllers/friend.controller');
 
 // a simple test url to check that all of our files are communicating correctly.
 router.get('/test', friend.test);
-router.get('/search',friend.search);
+router.post('/search',friend.search);
 router.post('/add',friend.add); 
 router.post('/list',friend.list);  
 router.post('/request_list',friend.request_list);

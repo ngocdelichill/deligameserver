@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const Friend = require('../models/friend.model');
-const { json } = require("express/lib/response");
+
 
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
@@ -9,16 +9,26 @@ exports.test = function (req, res) {
 
 exports.search = async function(req,res){
     const {keyword} = req.query;
+    const {token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
     if(typeof keyword === 'string'){
         const user = await User.aggregate([
-          {$match : {$or : [{name:{'$regex': keyword,$options:'i'}},{phone:{'$regex':keyword,$options:'i'}},{email:{'$regex':keyword,$options:'i'}}]}},
+          {
+              $match: {
+                  
+                  $or: [{name:{'$regex': keyword,$options:'i'}},{phone:{'$regex':keyword,$options:'i'}},{email:{'$regex':keyword,$options:'i'}}],
+                  
+              }
+          },
             { "$addFields": { "userId": { "$toString": "$_id" }}},
             { "$lookup": {
               "from": "friends",
               "localField": "userId",
               "foreignField": "userId",
               "as": "friend"
-            }}
+            }, 
+          },
+          {$match : {"userId":{$ne:decoded.user_id}}}
           ]);
         let u = [];
         for(let x in user){
