@@ -157,9 +157,9 @@ exports.list = async function(req,res){
     res.send(friend);
 }
 exports.accept = async function (req, res) {
-    const {token, id} = req.body;
+    const {token, userId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-   Friend.findById(id,function(err,f){
+   Friend.findById(userId,function(err,f){
         Friend.updateOne({"_id":f._id,userId:f.userId},{$set:{accept:true}},function(err,fri){
             res.send({code:1,msg:'Friend Accept'});
         }); 
@@ -167,9 +167,9 @@ exports.accept = async function (req, res) {
 }
 
 exports.remove = async function(req, res){
-    const {token, id} = req.body;
+    const {token, userId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Friend.findById(id,function(err,f){
+    Friend.findById(userId,function(err,f){
         Friend.deleteOne({"_id":f._id},function(err,fri){
             res.send({code:1,msg:'Friend Deleted'});
         });
