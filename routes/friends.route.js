@@ -9,6 +9,7 @@ const friend = require('../controllers/friend.controller');
 router.get('/test', friend.test);
 router.get('/search',friend.search);
 router.post('/add',friend.add); 
+router.post('/list',friend.list);  
 router.post('/request_list',friend.request_list);
 router.post('/invited_list',friend.invited_list);
 router.post('/accept',friend.accept);
