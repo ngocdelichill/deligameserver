@@ -10,17 +10,38 @@ exports.test = function (req, res) {
 exports.search = async function(req,res){
     const {keyword} = req.query;
     if(typeof keyword === 'string'){
-        const user = await User.find({$or : [{name:{'$regex': keyword,$options:'i'}},{phone:{'$regex':keyword,$options:'i'}},{email:{'$regex':keyword,$options:'i'}}]});
-        res.send(user);
+        const user = await User.aggregate([
+          {$match : {$or : [{name:{'$regex': keyword,$options:'i'}},{phone:{'$regex':keyword,$options:'i'}},{email:{'$regex':keyword,$options:'i'}}]}},
+            { "$addFields": { "userId": { "$toString": "$_id" }}},
+            { "$lookup": {
+              "from": "friends",
+              "localField": "userId",
+              "foreignField": "userId",
+              "as": "friend"
+            }}
+          ]);
+        let u = [];
+        for(let x in user){
+          
+          let accept = user[x].friend.length > 0 ? user[x].friend[0].accept:null;
+          u.push({
+            _id:user[x]._id,
+            name: user[x].name,
+            email: user[x].email,
+            phone: user[x].phone,
+            friend: accept
+          });
+        }
+        res.send(u);
     }else{
         res.send([]);
     }
 }
 
 exports.add = async function(req,res){
-    const {token,user_id} = req.body;
+    const {token,userId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    let friend = new Friend({userId:user_id,creator:decoded.user_id});
+    let friend = new Friend({userId:userId,creator:decoded.user_id});
     friend.save(function (err) {
         if (err) {
             console.log(err);
