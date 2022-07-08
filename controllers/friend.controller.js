@@ -40,15 +40,18 @@ exports.search = async function(req,res){
           ]);
         let u = [];
         for(let x in user){
-          
+         
           let accept = user[x].friend.length > 0 ? user[x].friend[0].accept:null;
+          let creator = user[x].friend.length > 0 ? user[x].friend[0].creator:null;
           u.push({
             _id:user[x]._id,
             name: user[x].name,
             email: user[x].email,
             phone: user[x].phone,
-            friend: accept
+            friend: accept,
+            creator: creator
           });
+          
         }
         res.send(u);
     }else{

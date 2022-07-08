@@ -19,15 +19,50 @@ exports.create = function (req, res) {
 
 exports.list = async function (req, res) {
     const room = await Room.aggregate([       
-          { "$addFields": { "roomId": { "$toString": "$_id" }}},
-          { "$lookup": {
-            "from": "joiners",
-            "localField": "roomId",
-            "foreignField": "roomId",
-            "as": "player"
-          }}
-        ]);
-    res.send(room);
+        { "$addFields": { "roomId": { "$toString": "$_id" }}},
+        { "$lookup": {
+          "from": "joiners",
+          "localField": "roomId",
+          "foreignField": "roomId",
+          "as": "player",
+          "pipeline" : [
+              { "$project": { "userObjId": { "$toObjectId": "$creator" } } },
+              {
+              "$lookup" : {
+                  "from": "users",
+                  "localField": "userObjId",
+                  "foreignField": "_id",
+                  "as": "user",
+              }
+          }],
+          
+        }}
+      ]);
+      var r = [];
+    for(let x in room){
+       
+        var players = [];
+        for(let y in room[x].player){
+            z = room[x].player[y].user;
+            for(let v in z){
+                players.push({
+                    "_id" : z[v]._id,
+                    "name" : z[v].name,
+                    "phone" : z[v].phone,
+                    "email" : z[v].email
+                });
+            }
+            
+        }
+        r.push({
+            "_id" : room[x]._id,
+            "name" : room[x].name,
+            "password" : (room[x].password != "" ? true:false),
+            "maxPlayers" : room[x].maxPlayers,
+            "players" : players
+        });
+    }
+    res.send(r);
 }
 
 exports.join = function (req, res) {
@@ -53,5 +88,19 @@ exports.join = function (req, res) {
 
     });
 }  
-   
+
+exports.search = async function(req,res){
+    const {keyword} = req.query;
+    if(typeof keyword === 'string' && keyword.length > 0){
+    
+        const room = await Room.aggregate([
+            { "$addFields": { "roomId": { "$toString": "$_id" }}},
+            { $match : { 
+            $or : [{name:{'$regex': keyword,$options:'i'}}, 
+            {"roomId":{'$regex':keyword, $options: 'i'}}],
+            }}
+        ]);
+        res.send(room);
+    }
+}
 
