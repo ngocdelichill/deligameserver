@@ -18,7 +18,12 @@ const RoomSchema = new mongoose.Schema({
       type: Date,
       default: Date.now,
     },
-    player: {
+    maxPlayers: {
+      type: Number,
+      require: true,
+      default: 0
+    },
+    bet: {
       type: Number,
       require: true,
       default: 0
