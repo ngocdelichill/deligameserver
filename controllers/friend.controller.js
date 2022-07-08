@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const Friend = require('../models/friend.model');
+const { decode } = require("jsonwebtoken");
 
 
 exports.test = function (req, res) {
@@ -161,21 +162,18 @@ exports.list = async function(req,res){
 }
 exports.accept = async function (req, res) {
     const {token, userId} = req.body;
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-   Friend.findById(userId,function(err,f){
-        Friend.updateOne({"_id":f._id,userId:f.userId},{$set:{accept:true}},function(err,fri){
-            res.send({code:1,msg:'Friend Accept'});
-        }); 
-   });
+    const decoded = jwt.verify(token, process.env.JWT_KEY);  
+      Friend.updateOne({userId:decoded.user_id,creator:userId},{$set:{accept:true}},function(err,fri){
+          res.send({code:1,userId:userId});
+      }); 
+  
 }
 
 exports.remove = async function(req, res){
     const {token, userId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    //Friend.findById(userId,function(err,f){
-        Friend.deleteMany({$or : [ {$and : [{"userId":decoded.user_id},{"creator":userId}]},{$and : [{"userId":userId},{"creator":decoded.user_id}]}]},function(err,fri){
-            res.send({code:1,msg:'Friend Deleted'});
-        });
-   //});
+    Friend.deleteMany({$or : [ {$and : [{"userId":decoded.user_id},{"creator":userId}]},{$and : [{"userId":userId},{"creator":decoded.user_id}]}]},function(err,fri){
+        res.send({code:1,userId:userId});
+    });
 }
 

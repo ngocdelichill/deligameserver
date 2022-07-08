@@ -91,7 +91,7 @@ exports.join = function (req, res) {
 
 exports.search = async function(req,res){
     const {keyword} = req.query;
-    if(typeof keyword === 'string' && keyword.length > 0){
+    if(typeof keyword === 'string'){
     
         const room = await Room.aggregate([
             { "$addFields": { "roomId": { "$toString": "$_id" }}},
