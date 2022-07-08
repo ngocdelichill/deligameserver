@@ -49,7 +49,7 @@ exports.search = async function(req,res){
             name: user[x].name,
             email: user[x].email,
             phone: user[x].phone,
-            friend: accept,
+            isFriend: accept,
             creator: creator
           });
           
@@ -146,7 +146,7 @@ exports.invited_list = async function(req, res){
 exports.list = async function(req,res){
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const friend = await Friend.aggregate([
+    const fri = await Friend.aggregate([
         {$match:{"$or" : [{creator:decoded.user_id},{userId:decoded.user_id}],
         "$and" : [{accept:true}]}},
         { "$lookup": {
@@ -158,6 +158,17 @@ exports.list = async function(req,res){
           "as": "friends"
         }}
       ]);
+
+      let friend = [];
+      for(let x in fri){
+        let f = fri[x].friends.length > 0 ? fri[x].friends[0]:[];        
+        friend.push({
+          "_id" : f._id,
+          "name" : f.name,
+          "phone" : f.phone,
+          "email" : f.email
+        });
+      }
     res.send(friend);
 }
 exports.accept = async function (req, res) {
