@@ -18,7 +18,7 @@ const RoomSchema = new mongoose.Schema({
       type: Date,
       default: Date.now,
     },
-    maxPlayers: {
+    maxPlayers: { 
       type: Number,
       require: true,
       default: 0
@@ -29,7 +29,5 @@ const RoomSchema = new mongoose.Schema({
       default: 0
     }
   });
-  
 
-// Export the model
 module.exports = mongoose.model('Room', RoomSchema);

@@ -12,8 +12,8 @@ exports.create = function (req, res) {
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:maxPlayers,bet}
     );
-    newRom.save(function (err) {
-        res.send({code: 1, msg: "Room is created"});
+    newRom.save(function (err,room){    
+        res.send(room);
     });
 }
 
