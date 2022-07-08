@@ -106,7 +106,7 @@ exports.request_list = async function(req, res){
           name: item.name,
           email: item.email,
           phone: item.phone,
-          friend:friend[x].accept
+          isFriend:friend[x].accept
         });
       }
     res.send(fri);
@@ -137,7 +137,7 @@ exports.invited_list = async function(req, res){
           name: item.name,
           email: item.email,
           phone: item.phone,
-          friend:friend[x].accept
+          isFriend:friend[x].accept
         });
       }
     res.send(fri);
