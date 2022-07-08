@@ -10,7 +10,7 @@ exports.create = function (req, res) {
     const {name, password, token,maxPlayers,bet} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, player:maxPlayers,bet}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:maxPlayers,bet}
     );
     newRom.save(function (err) {
         res.send({code: 1, msg: "Room is created"});
