@@ -172,10 +172,10 @@ exports.accept = async function (req, res) {
 exports.remove = async function(req, res){
     const {token, userId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Friend.findById(userId,function(err,f){
-        Friend.deleteOne({"_id":f._id},function(err,fri){
+    //Friend.findById(userId,function(err,f){
+        Friend.deleteMany({$or : [ {$and : [{"userId":decoded.user_id},{"creator":userId}]},{$and : [{"userId":userId},{"creator":decoded.user_id}]}]},function(err,fri){
             res.send({code:1,msg:'Friend Deleted'});
         });
-   });
+   //});
 }
 
