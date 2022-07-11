@@ -14,4 +14,5 @@ router.get('/dice',play.dice);
 router.post("/next",play.next);
 router.get('/auction',play.auction);
 router.post("/bid",play.bid);
+router.post("/choose_color",play.choose_color);
 module.exports = router;

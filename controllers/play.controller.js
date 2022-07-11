@@ -86,3 +86,12 @@ exports.bid = function(req,res){
     const {bid,currentbidder} = req.body;
     _io.emit(`bid_${room}`,{bid:bid,userId:decoded.user_id,currentbidder:currentbidder});
 }
+
+exports.choose_color = function(req,res){
+    const url = new URL(req.headers.referer);
+    const token = url.searchParams.get("token");
+    const room = url.searchParams.get("room");
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const color = req.body.color;
+    _io.emit(`choose_color_${room}`,{userId:decoded.user_id,color:color});
+}

@@ -19,10 +19,10 @@ exports.create = function (req, res) {
 }
 
 exports.list = async function (req, res) {
-    let limit = isNaN(req.query._limit) ? 10:parseInt(req.query._limit);
-    let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
-    let classRoom = isNaN(req.query.class_room) ? 1:parseInt(req.query.class_room); 
-    let level = isNaN(req.query.level) ? 1:parseInt(req.query.level);
+    let limit = isNaN(req.query._limit) ? parseInt(req.query._limit):20;
+    let page = isNaN(req.query._page) ? parseInt(req.query._page):1;
+    let classRoom = isNaN(req.query.class_room) ? parseInt(req.query.class_room):1; 
+    let level = isNaN(req.query.level) ? parseInt(req.query.level):1;
     let skip = page * limit - limit;
     let keyword = typeof req.query.keyword == 'string' ? req.query.keyword:'';
 
@@ -31,7 +31,8 @@ exports.list = async function (req, res) {
         { "$addFields": { "roomId": { "$toString": "$_id" }}},
         {
             $match: {
-                $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], $and: [{classRoom : classRoom}, {level: level}]
+                $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
+                $and: [{classRoom : classRoom}, {level: level}]
             }
         },
         { "$lookup": {
@@ -63,9 +64,7 @@ exports.list = async function (req, res) {
                     "_id" : z[v]._id,
                     "name" : z[v].name,
                     "phone" : z[v].phone,
-                    "email" : z[v].email,
-                    "classRoom" : z[v].classRoom,
-                    "level" : z[v].level
+                    "email" : z[v].email                    
                 });
             }
             
@@ -75,7 +74,9 @@ exports.list = async function (req, res) {
             "name" : room[x].name,
             "password" : (room[x].password != "" ? true:false),
             "maxPlayers" : room[x].maxPlayers,
-            "players" : players
+            "players" : players,
+            "classRoom" : room[x].classRoom,
+            "level" : room[x].level
         });
     }
     res.send(r);

@@ -213,7 +213,7 @@ function Game() {
 		}
 		
 		var bid = document.getElementById("bid").value;
-		let txt = `<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">Pennsylvania Railroad</a></span></div><div>Highest Bid = $<span id="highestbid">${bid}</span> (<span id="highestbidder">${player[highestbidder].name}</span>)</div><div><span id="currentbidder"></span>,${player[currentbidder].name} it is your turn to bid.</div></div>
+		let txt = `<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">${s.name}</a></span></div><div>Highest Bid = $<span id="highestbid">${bid}</span> (<span id="highestbidder">${player[highestbidder].name}</span>)</div><div><span id="currentbidder"></span>,${player[currentbidder].name} it is your turn to bid.</div></div>
 		<div id="popupdrag"></div>
 	</div>`;
 
