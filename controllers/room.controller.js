@@ -19,13 +19,12 @@ exports.create = function (req, res) {
 }
 
 exports.list = async function (req, res) {
-    let limit = isNaN(req.query._limit) ? parseInt(req.query._limit):20;
-    let page = isNaN(req.query._page) ? parseInt(req.query._page):1;
-    let classRoom = isNaN(req.query.class_room) ? parseInt(req.query.class_room):1; 
-    let level = isNaN(req.query.level) ? parseInt(req.query.level):1;
+    let limit = isNaN(req.query._limit) ? 20:parseInt(req.query._limit);
+    let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
+    let classRoom = isNaN(req.query.class_room) ? 1:parseInt(req.query.class_room); 
+    let level = isNaN(req.query.level) ? 1:parseInt(req.query.level);
     let skip = page * limit - limit;
     let keyword = typeof req.query.keyword == 'string' ? req.query.keyword:'';
-
 
     const room = await Room.aggregate([       
         { "$addFields": { "roomId": { "$toString": "$_id" }}},
