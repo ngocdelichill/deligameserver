@@ -85,6 +85,7 @@ exports.bid = function(req,res){
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const {bid,currentbidder} = req.body;
     _io.emit(`bid_${room}`,{bid:bid,userId:decoded.user_id,currentbidder:currentbidder});
+    res.status(200);
 }
 
 exports.choose_color = function(req,res){

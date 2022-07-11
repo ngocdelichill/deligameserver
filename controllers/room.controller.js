@@ -51,7 +51,8 @@ exports.list = async function (req, res) {
           }],
           
         }}
-      ]).limit(limit).skip(skip);
+      ]).skip(skip).limit(limit);
+      
       var r = [];
     for(let x in room){
        

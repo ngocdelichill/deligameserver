@@ -171,16 +171,16 @@ function Game() {
 		if (highestbidder === 0) {
 			highestbidder = currentbidder;
 		}
-
+		
 		while (true) {
-			currentbidder++;
 			
+			currentbidder++;
 			if (currentbidder > pcount) {
 				currentbidder -= pcount;
 			}
-
+			
 			if (currentbidder == highestbidder) {
-				
+				console.log(highestbidder);
 				finalizeAuction();
 				return;
 			} else if (player[currentbidder].bidding) {
@@ -213,7 +213,7 @@ function Game() {
 		}
 		
 		var bid = document.getElementById("bid").value;
-		let txt = `<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">${s.name}</a></span></div><div>Highest Bid = $<span id="highestbid">${bid}</span> (<span id="highestbidder">${player[highestbidder].name}</span>)</div><div><span id="currentbidder"></span>,${player[currentbidder].name} it is your turn to bid.</div></div>
+		let txt = `<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">${s.name}</a></span></div><div>Highest Bid = $<span id="highestbid">${bid}</span> (<span id="highestbidder">${player[highestbidder].name}</span>)</div><div><span id="currentbidder" data-id="${player[currentbidder]._id}">${player[currentbidder].name}</span>, it is your turn to bid.</div></div>
 		<div id="popupdrag"></div>
 	</div>`;
 
@@ -258,14 +258,14 @@ function Game() {
 				
 				var xhttp = new XMLHttpRequest();
 				xhttp.onreadystatechange = function() {
-					if (this.readyState == 4 && this.status == 200) {
-						console.log(this.responseText);
-						
+					if (this.status == 200) {
+						console.log(this);
 					}
 				};
 				xhttp.open("POST", `/plays/bid`, true);
 				xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 				xhttp.send(`bid=${bid}&currentbidder=${player[currentbidder]._id}`);
+			
 			} else {
 				document.getElementById("bid").value = "Your bid must be greater than highest bid. ($" + highestbid + ")";
 				document.getElementById("bid").style.color = "red";
