@@ -25,7 +25,7 @@ exports.register = async function (req, res) {
     const token = jwt.sign({
         user_id: user._id,
         email
-    }, process.env.JWT_KEY, {expiresIn: "2h"});
+    }, process.env.JWT_KEY, {expiresIn: "30d"});
     
     user.token = token;
     user.save(function (err) {
@@ -55,7 +55,7 @@ exports.login = async function (req, res) {
         const token = jwt.sign({
             user_id: user._id,
             email
-        }, process.env.JWT_KEY, {expiresIn: "2h"});
+        }, process.env.JWT_KEY, {expiresIn: "30d"});
         User.updateOne({
             email
         }, {

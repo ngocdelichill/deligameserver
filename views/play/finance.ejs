@@ -83,28 +83,28 @@
 			game.auction();
 		});
 		socket.on(`bid_${DELI.parameterURL("room")}`,function(res){
-			let highestbid = {}; let currentbidder = {};
+			let highestbid = {}; let cb = {};
 		
 			for(let x in _player){
 				if(_player[x]._id == res.userId){
 					highestbid = _player[x];
 				}
 				if(_player[x]._id == res.currentbidder){
-					currentbidder = _player[x];
+					cb = _player[x];
 				}
 			}
 			
 				let txt = `<div style="position: relative;">
-				<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">Pennsylvania Railroad</a></span></div><div>Highest Bid = $<span id="highestbid">${res.bid}</span> (<span id="highestbidder">${highestbid.name}</span>)</div><div><span id="currentbidder" data-id="${currentbidder._id}">${currentbidder.name}</span>, it is your turn to bid.</div></div>`;
+				<div id="popuptext"><div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">Socket Auction <span id="propertyname"><a href="javascript:void(0);" onmouseover="showdeed(15);" onmouseout="hidedeed();" class="statscellcolor">Pennsylvania Railroad</a></span></div><div>Highest Bid = $<span id="highestbid">${res.bid}</span> (<span id="highestbidder">${highestbid.name}</span>)</div><div><span id="currentbidder" data-id="${cb._id}">${cb.name}</span>, it is your turn to bid.</div></div>`;
 	
-				if(currentbidder._id.toString() == _me._id.toString())
+				if(cb._id.toString() == _me._id.toString())
 					txt += "<div><input id='bid' title='Enter an amount to bid on " + s.name + ".' style='width: 291px;' /></div><div><input type='button' value='Bid' onclick='game.auctionBid();' title='Place your bid.' /><input type='button' value='Pass' title='Skip bidding this time.' onclick='game.auctionPass();' /><input type='button' value='Exit Auction' title='Stop bidding on " + s.name + " altogether.' onclick='if (confirm(\"Are you sure you want to stop bidding on this property altogether?\")) game.auctionExit();' /></div>";
 				txt += `<div id="popupdrag"></div>
 			</div>`;
 		
 				document.getElementById("popup").innerHTML = txt;
 				
-			console.log(currentbidder);
+	
 			
 		});
 		socket.on(`choose_color_${DELI.parameterURL("room")}`,function(res){

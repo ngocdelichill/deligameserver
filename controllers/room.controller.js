@@ -53,6 +53,17 @@ exports.list = async function (req, res) {
         }}
       ]).skip(skip).limit(limit);
       
+      const total = await Room.aggregate( [
+        {
+            $match: {
+                $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
+                $and: [{classRoom : classRoom}, {level: level}]
+            }
+        },
+        { $group: { _id: null, _count: { $sum: 1 } } },
+        { $project: { _id: 0 } }
+     ] );
+
       var r = [];
     for(let x in room){
        
@@ -79,7 +90,7 @@ exports.list = async function (req, res) {
             "level" : room[x].level
         });
     }
-    res.send(r);
+    res.send({list:r,total:total[0]._count});
 }
 
 exports.join = function (req, res) {
