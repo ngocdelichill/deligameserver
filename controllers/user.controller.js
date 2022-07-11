@@ -180,12 +180,13 @@ exports.update = async function (req, res) {
 };
 
 exports.change_password = async function(req,res){
-    const {email, password} = req.body;
-    const user = await User.findOne({email});
+    const {password, passwordOld, token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const user = await User.findById(decoded.user_id);
     encryptedPassword = await bcrypt.hash(password, 10);
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && (await bcrypt.compare(passwordOld, user.password))) {
         User.updateOne({
-            email: email
+            email: user.email
         }, {
             $set: {
                 password:encryptedPassword

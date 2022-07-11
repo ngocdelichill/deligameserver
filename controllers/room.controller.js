@@ -2,15 +2,16 @@ const jwt = require("jsonwebtoken");
 const Room = require('../models/room.model');
 const Joiner = require('../models/joiner.model');
 const User = require('../models/user.model');
+const { parse } = require("dotenv");
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
 
 exports.create = function (req, res) {
-    const {name, password, token,maxPlayers,bet} = req.body;
+    const {name, password, token,maxPlayers,bet, classRoom, level} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, maxPlayers:maxPlayers,bet}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:maxPlayers,bet, classRoom: classRoom, level:level}
     );
     newRom.save(function (err,room){    
         res.send(room);
@@ -18,8 +19,21 @@ exports.create = function (req, res) {
 }
 
 exports.list = async function (req, res) {
+    let limit = isNaN(req.query._limit) ? 10:parseInt(req.query._limit);
+    let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
+    let classRoom = isNaN(req.query.class_room) ? 1:parseInt(req.query.class_room); 
+    let level = isNaN(req.query.level) ? 1:parseInt(req.query.level);
+    let skip = page * limit - limit;
+    let keyword = typeof req.query.keyword == 'string' ? req.query.keyword:'';
+
+
     const room = await Room.aggregate([       
         { "$addFields": { "roomId": { "$toString": "$_id" }}},
+        {
+            $match: {
+                $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], $and: [{classRoom : classRoom}, {level: level}]
+            }
+        },
         { "$lookup": {
           "from": "joiners",
           "localField": "roomId",
@@ -37,7 +51,7 @@ exports.list = async function (req, res) {
           }],
           
         }}
-      ]);
+      ]).limit(limit).skip(skip);
       var r = [];
     for(let x in room){
        
@@ -49,7 +63,9 @@ exports.list = async function (req, res) {
                     "_id" : z[v]._id,
                     "name" : z[v].name,
                     "phone" : z[v].phone,
-                    "email" : z[v].email
+                    "email" : z[v].email,
+                    "classRoom" : z[v].classRoom,
+                    "level" : z[v].level
                 });
             }
             
@@ -90,14 +106,20 @@ exports.join = function (req, res) {
 }  
 
 exports.search = async function(req,res){
-    const {keyword} = req.query;
+    const {keyword, classRoom, level} = req.query;
     if(typeof keyword === 'string'){
     
         const room = await Room.aggregate([
             { "$addFields": { "roomId": { "$toString": "$_id" }}},
             { $match : { 
-            $or : [{name:{'$regex': keyword,$options:'i'}}, 
-            {"roomId":{'$regex':keyword, $options: 'i'}}],
+            $or : [
+                {name:{'$regex': keyword,$options:'i'}}, 
+                {"roomId":{'$regex':keyword, $options: 'i'}},                
+        ],
+        $and : [
+            {classRoom : classRoom},
+            {level: level}
+        ]
             }}
         ]);
         res.send(room);

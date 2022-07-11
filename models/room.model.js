@@ -20,13 +20,23 @@ const RoomSchema = new mongoose.Schema({
     },
     maxPlayers: { 
       type: Number,
-      require: true,
+      required: true,
       default: 0
     },
     bet: {
       type: Number,
       require: true,
       default: 0
+    },
+    classRoom: {
+      type: Number,
+      required: true,
+      default: 1
+    },
+    level: {
+      type : Number,
+      required : true,
+      default : 1
     }
   });
 
