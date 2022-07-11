@@ -14,6 +14,11 @@ exports.finance = async function (req, res) {
 
     //const userlist = await Joiner.find({roomId:roomId, creator:{$ne:decoded.user_id}});
     userlist = await Joiner.aggregate([
+        {
+            $match: {
+                roomId:roomId
+            }
+        },
         { "$project": { "userObjId": { "$toObjectId": "$creator" } } },
         { "$lookup": {
         "localField": "userObjId",

@@ -57,7 +57,7 @@ function Game() {
 	var finalizeAuction = function() {
 		var p = player[highestbidder];
 		var sq = square[auctionproperty];
-
+		console.log(p);
 		if (highestbid > 0) {
 			p.pay(highestbid, 0);
 			sq.owner = highestbidder;
@@ -67,7 +67,7 @@ function Game() {
 		for (var i = 1; i <= pcount; i++) {
 			player[i].bidding = true;
 		}
-
+		
 		$("#popupbackground").hide();
 		$("#popupwrap").hide();
 
@@ -182,7 +182,7 @@ function Game() {
 			}
 			*/
 			if (currentbidder == highestbidder) {
-				
+				console.log(currentbidder);
 				finalizeAuction();
 				return;
 			} else if (player[currentbidder].bidding) {
@@ -272,18 +272,21 @@ function Game() {
 					}
 					
 				};
-
+				xhttp.open("POST", `/plays/bid`, true);
+				xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 				let cb = document.getElementById("currentbidder").dataset.id;
 
 				currentbidder++;
 				if(currentbidder > pcount)
 					currentbidder = 1;
 				if(player[currentbidder]._id != cb){
-					xhttp.open("POST", `/plays/bid`, true);
-					xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+					
 					xhttp.send(`bid=${bid}&currentbidder=${player[currentbidder]._id}`);
 				}else{
-					console.log(currentbidder);
+					currentbidder++;
+					if(currentbidder > pcount)
+						currentbidder = 1;
+					xhttp.send(`bid=${bid}&currentbidder=${player[currentbidder]._id}`);
 				}
 			} else {
 				document.getElementById("bid").value = "Your bid must be greater than highest bid. ($" + highestbid + ")";

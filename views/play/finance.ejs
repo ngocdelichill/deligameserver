@@ -101,10 +101,10 @@
 					txt += "<div><input id='bid' title='Enter an amount to bid on " + s.name + ".' style='width: 291px;' /></div><div><input type='button' value='Bid' onclick='game.auctionBid();' title='Place your bid.' /><input type='button' value='Pass' title='Skip bidding this time.' onclick='game.auctionPass();' /><input type='button' value='Exit Auction' title='Stop bidding on " + s.name + " altogether.' onclick='if (confirm(\"Are you sure you want to stop bidding on this property altogether?\")) game.auctionExit();' /></div>";
 				txt += `<div id="popupdrag"></div>
 			</div>`;
-		
-				document.getElementById("popup").innerHTML = txt;
 				
-	
+				document.getElementById("popup").innerHTML = txt;
+				$("#popupbackground").show();
+				$("#popupwrap").show();
 			
 		});
 		socket.on(`choose_color_${DELI.parameterURL("room")}`,function(res){
