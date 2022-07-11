@@ -8,10 +8,10 @@ exports.test = function (req, res) {
 };
 
 exports.create = function (req, res) {
-    const {name, password, token,maxPlayers,bet, classRoom, level} = req.body;
+    const {name, password, token,max_players,bet, class_room, level} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, maxPlayers:maxPlayers,bet, classRoom: classRoom, level:level}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level}
     );
     newRom.save(function (err,room){    
         res.send(room);
