@@ -1,6 +1,9 @@
 const Room = require('../models/room.model');
 const User = require('../models/user.model');
 const Joiner = require('../models/joiner.model');
+const Play = require('../models/play.model');
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
+
 const jwt = require("jsonwebtoken");
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
@@ -48,11 +51,32 @@ exports.finance = async function (req, res) {
 
 }
 
+const prevHash = function(room){
+    Play.findOne({roomId:room}, function(err, play){
+        if(play != null)
+            return play.token;
+        return "";
+    }).sort({_id:-1}).limit(1);
+};
+
 exports.ready = function(req,res){
     const url = new URL(req.headers.referer);
     const token = url.searchParams.get("token");
     const room = url.searchParams.get("room");
     const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const timestamp = new Date();
+    var data = {roomId:room,creator:decoded.user_id,pace:"ready",createdAt:timestamp};
+    
+    Play.find({roomId:room,creator:decoded.user_id,pace:"ready"},function(err, play){        
+        if(play.length == 0){
+            let tk = SHA256(prevHash(room) + timestamp + JSON.stringify(data));
+            data.token = tk;
+            const newPlay = new Play(data);
+            newPlay.save(function(err,play){
+                res.send(play);
+            });
+        }
+    });
     _io.emit(`ready_${room}`,decoded.user_id);
    
 }
@@ -102,8 +126,7 @@ exports.choose_color = function(req,res){
     _io.emit(`choose_color_${room}`,{userId:decoded.user_id,color:color});
 }
 
-
-exports.chinachess = async function(req, res){
+exports.chinesechess = async function(req, res){
     let roomId = req.query.room;
     let token = req.query.token;
        
@@ -111,34 +134,100 @@ exports.chinachess = async function(req, res){
     userlist = await Joiner.aggregate([
         {
             $match: {
-                roomId:roomId
+                roomId: roomId
             }
-        },
-        { "$project": { "userObjId": { "$toObjectId": "$creator" } } },
-        { "$lookup": {
-        "localField": "userObjId",
-        "from": "users",
-        "foreignField": "_id",
-        "as": "player"
-      }}
-        ]);
-        let ul = [];
+        }, {
+            "$project": {
+                "userObjId": {
+                    "$toObjectId": "$creator"
+                }
+            }
+        }, {
+            "$lookup": {
+                "localField": "userObjId",
+                "from": "users",
+                "foreignField": "_id",
+                "as": "player",
+                "pipeline" : [
+                   { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
+                    {
+                    "$lookup" : {
+                        "from": "plays",
+                        "localField": "creatorObjId",
+                        "foreignField": "creator",
+                        "as": "play",
+                    }
+                }]
+            }
+        }
+    ]);
+    let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
         ul.push({
             _id:player._id,
-            name:player.name
+            name:player.name,
+            play : player.play
         });
     } 
 
     Room.findById(roomId, function (err, room){
+        User.findById(decoded.user_id, function (err, user) {           
+            res.send({room: room,me:user,players:ul});
+        });
+    });
+    
+}
 
-        User.findById(decoded.user_id, function (err, user) {
-           
+exports.devchinesechess = async function(req, res){
+    let roomId = req.query.room;
+    let token = req.query.token;
+       
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    userlist = await Joiner.aggregate([
+        {
+            $match: {
+                roomId: roomId
+            }
+        }, {
+            "$project": {
+                "userObjId": {
+                    "$toObjectId": "$creator"
+                }
+            }
+        }, {
+            "$lookup": {
+                "localField": "userObjId",
+                "from": "users",
+                "foreignField": "_id",
+                "as": "player",
+                "pipeline" : [
+                   { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
+                    {
+                    "$lookup" : {
+                        "from": "plays",
+                        "localField": "creatorObjId",
+                        "foreignField": "creator",
+                        "as": "play",
+                    }
+                }]
+            }
+        }
+    ]);
+    let ul = [];
+    for(let x in userlist){
+        let player = userlist[x].player[0];
+        ul.push({
+            _id:player._id,
+            name:player.name,
+            play : player.play
+        });
+    } 
+
+    Room.findById(roomId, function (err, room){
+        User.findById(decoded.user_id, function (err, user) {           
             res.render("play/chinachess", {room: room,user:user,userlist:ul});
         });
-
-
     });
     
 }
@@ -161,7 +250,7 @@ exports.chess_mankey = function(req,res){
     if(deleteKey != undefined){
         //delKey = deleteKey.toString().toUpperCase();
     }                    
-    //key = key.toString().toUpperCase();
+    let k = key.toString().toUpperCase();
     var tmp = [];
     pe = pace.split(",");
     tmp.push(8 - parseInt(pe[0]));
@@ -170,4 +259,5 @@ exports.chess_mankey = function(req,res){
     tmp.push(9 - parseInt(pe[3]));
     pa = tmp.join(",");
     _io.emit(`chess_mankey_${room}`,{userId:decoded.user_id,pace:pa});
+    res.status(200).send({userId:decoded.user_id,pace:pa})
 }

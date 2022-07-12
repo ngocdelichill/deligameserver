@@ -11,5 +11,6 @@ router.post('/create',room.create);
 router.get('/list',room.list);
 router.post('/join',room.join);
 router.get('/search',room.search);
+router.patch('/update',room.update);
 
 module.exports = router;

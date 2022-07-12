@@ -3,6 +3,8 @@ const Room = require('../models/room.model');
 const Joiner = require('../models/joiner.model');
 const User = require('../models/user.model');
 const { parse } = require("dotenv");
+const { decode } = require("jsonwebtoken");
+const ObjectId = require('mongoose').Types.ObjectId; 
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
@@ -17,7 +19,21 @@ exports.create = function (req, res) {
         res.send(room);
     });
 }
+exports.update = async function (req, res){
+    const {roomId,token,name,password,max_players, bet} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
+    const room = await Room.updateOne({creator:decoded.user_id,_id : new ObjectId(roomId)},{$set : {
+        name:name,
+        password:password,
+        maxPlayers:max_players,
+        bet:bet
+    }, function(err, room){
+        
+    }});
 
+    res.send(room);
+}
 exports.list = async function (req, res) {
     let limit = isNaN(req.query._limit) ? 20:parseInt(req.query._limit);
     let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);

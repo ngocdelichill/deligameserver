@@ -33,20 +33,20 @@ const DELI = {
        return Math.floor(seconds) + " seconds ago";
      }
  }
-window.onload = function(){
-  document.getElementById("imready").addEventListener("click", () => {
-    //document.getElementById("me").getElementsByTagName("small")[0].innerHTML = "Ready";    
+
+function imready(obj){
+  obj.innerHTML = "Cancel"; 
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            console.log(this.responseText);
+            console.log(JSON.parse(this.responseText));
         }
     };
     xhttp.open("GET", `/plays/ready`, true);
     xhttp.send();
-});
-
 }
+
+
 
 const PLAYER = {
   chooseColor :  (obj) => {

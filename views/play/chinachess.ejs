@@ -33,13 +33,15 @@
     
     <% 
     for(x in userlist){
+        
+        var ready = (userlist[x].play.length > 0 ? userlist[x].play[0].pace:"");
     %>
-    <li id="player_<%=userlist[x]._id%>"><%=userlist[x].name%> <small></small></li>
+    <li id="player_<%=userlist[x]._id%>"><%=userlist[x].name%> <small><%=ready%></small></li>
     <%
     }
     %>
 </ul>
-<button id="imready">I'm Ready</button>
+<button onclick="imready(this)">I'm Ready</button>
 
  
 <link href="/chess/css/chess.css" rel="stylesheet" type="text/css">
