@@ -55,6 +55,7 @@ exports.list = async function (req, res) {
       ]).sort({_id:-1}).skip(skip).limit(limit);
       
       const total = await Room.aggregate( [
+        { "$addFields": { "roomId": { "$toString": "$_id" }}},
         {
             $match: {
                 $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 

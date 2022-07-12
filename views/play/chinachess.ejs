@@ -1,6 +1,32 @@
+<script src="/js/script.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
 <script>var socket = io.connect(location.protocol+'//localhost:3000');</script>
+<script>
+    const _player = JSON.parse('<%-JSON.stringify(userlist)%>');
+    const _me = JSON.parse('<%-JSON.stringify(user)%>');
+</script>
 
+<script>
+    socket.on(`room_join_${DELI.parameterURL("room")}`,function(res){
+        var li = document.createElement("li");
+        li.id = `player_${res._id}`;
+        li.innerHTML = `${res.name} <small></small>`;
+        document.getElementById("player_list").appendChild(li);
+    });
+    socket.on(`room_remove`,function(res){
+        var user = document.getElementById(`player_${res}`);
+        if(user != null)
+            user.remove();
+    });
+    socket.on(`ready_${DELI.parameterURL("room")}`,function(res){
+        var user = document.getElementById(`player_${res}`);
+        if(user != null){
+            user.getElementsByTagName("small")[0].innerHTML = "Ready";
+        }
+    });
+
+    
+    </script>
 <h1>Room <%=room.name%></h1>
 <small><%=room._id%></small>
 <ul id="player_list">
@@ -15,4 +41,68 @@
 </ul>
 <button id="imready">I'm Ready</button>
 
-<script src="/js/script.js"></script>
+ 
+<link href="/chess/css/chess.css" rel="stylesheet" type="text/css">
+
+</head>
+<body>
+<div class="box" id="box">
+	<div class="chess_left">
+		<canvas id="chess"></canvas>
+		<audio src="audio/click.wav" id="clickAudio" preload="auto"></audio>
+		<!--<audio src="audio/check.wav" id="checkAudio" preload="auto"></audio>-->
+		<audio src="audio/select.wav" id="selectAudio" preload="auto"></audio>
+		<div>
+			<div class="bn_box" id="bnBox">
+        <button id="tyroPlay">Start</button>
+				<!--input type="button" name="offensivePlay" id="tyroPlay" value="Easy" />
+				<input type="button" name="offensivePlay" id="superPlay" value="Hard" />
+                
+                <input type="button" name="button" id="" value="大师水平" disabled />
+                <input type="button" name="offensivePlay" id="offensivePlay" value="先手开始" />
+                <input type="button" name="defensivePlay" id="defensivePlay" value="后手开始" />
+				
+                
+				<input type="button" name="regret" id="regretBn" value="3 steps back" />
+				<input type="button" name="billBn" id="billBn" value="棋谱" class="bn_box" />
+				<input type="button" name="stypeBn" id="stypeBn" value="Change Skin" />
+      -->
+			</div>
+		</div>
+		
+		
+	</div>
+	<div class="chess_right" id="chessRight">
+		<select name="billList" id="billList">
+		</select>
+		<ol id="billBox" class="bill_box">
+		</ol>
+	</div>
+	<div id="moveInfo" class="move_info"> </div>
+</div>
+
+  <script
+  src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+  <script>
+    var socket = io.connect(location.protocol+'//localhost:3000'); 
+    socket.on(`joiner_in_${DELI.parameterURL("room")}`, function(res) {
+      var li = document.createElement("li");
+      li.id = `joiner_${res.id}`;
+      li.innerHTML = res.name;
+      document.getElementById("playerList").appendChild(li);
+    });
+    socket.on(`joiner_out_${DELI.parameterURL("room")}`, function(res) {
+      var joiner = document.getElementById(`joiner_${res.id}`);
+      if(joiner != null)
+        joiner.remove();
+    });
+  
+  
+  </script>
+
+<script type="text/javascript" src="/chess/js/common.js"></script> 
+<script type="text/javascript" src="/chess/js/play.js"></script> 
+<script type="text/javascript" src="/chess/js/AI.js"></script> 
+<script type="text/javascript" src="/chess/js/bill.js"></script> 
+<script type="text/javascript" src="/chess/js/gambit.js"></script>

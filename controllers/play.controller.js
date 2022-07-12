@@ -142,3 +142,32 @@ exports.chinachess = async function(req, res){
     });
     
 }
+
+exports.chess_start = function(req,res){
+    const url = new URL(req.headers.referer);
+    const token = url.searchParams.get("token");
+    const room = url.searchParams.get("room");
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    _io.emit(`chess_start_${room}`,{userId:decoded.user_id});
+}
+
+exports.chess_mankey = function(req,res){
+    const url = new URL(req.headers.referer);
+    const token = url.searchParams.get("token");
+    const room = url.searchParams.get("room");
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const {key,pace,deleteKey} = req.body; 
+
+    if(deleteKey != undefined){
+        //delKey = deleteKey.toString().toUpperCase();
+    }                    
+    //key = key.toString().toUpperCase();
+    var tmp = [];
+    pe = pace.split(",");
+    tmp.push(8 - parseInt(pe[0]));
+    tmp.push(9 - parseInt(pe[1]));
+    tmp.push(8 - parseInt(pe[2]));
+    tmp.push(9 - parseInt(pe[3]));
+    pa = tmp.join(",");
+    _io.emit(`chess_mankey_${room}`,{userId:decoded.user_id,pace:pa});
+}
