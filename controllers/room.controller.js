@@ -8,10 +8,10 @@ exports.test = function (req, res) {
 };
 
 exports.create = function (req, res) {
-    const {name, password, token,max_players,bet, class_room, level} = req.body;
+    const {name, password, token,max_players,bet, class_room, level, game} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game}
     );
     newRom.save(function (err,room){    
         res.send(room);
@@ -23,6 +23,7 @@ exports.list = async function (req, res) {
     let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
     let classRoom = isNaN(req.query.class_room) ? 1:parseInt(req.query.class_room); 
     let level = isNaN(req.query.level) ? 1:parseInt(req.query.level);
+    let game = isNaN(req.query.game) ? 1:parseInt(req.query.game);
     let skip = page * limit - limit;
     let keyword = typeof req.query.keyword == 'string' ? req.query.keyword:'';
 
@@ -31,7 +32,7 @@ exports.list = async function (req, res) {
         {
             $match: {
                 $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
-                $and: [{classRoom : classRoom}, {level: level}]
+                $and: [{classRoom : classRoom}, {level: level}, {game: game}]
             }
         },
         { "$lookup": {
@@ -51,7 +52,7 @@ exports.list = async function (req, res) {
           }],
           
         }}
-      ]).skip(skip).limit(limit);
+      ]).sort({_id:-1}).skip(skip).limit(limit);
       
       const total = await Room.aggregate( [
         {
