@@ -58,7 +58,7 @@ exports.list = async function (req, res) {
         {
             $match: {
                 $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
-                $and: [{classRoom : classRoom}, {level: level}]
+                $and: [{classRoom : classRoom}, {level: level}, {game: game}]
             }
         },
         { $group: { _id: null, _count: { $sum: 1 } } },

@@ -15,4 +15,6 @@ router.post("/next",play.next);
 router.get('/auction',play.auction);
 router.post("/bid",play.bid);
 router.post("/choose_color",play.choose_color);
+
+router.get('/chinachess',play.chinachess);
 module.exports = router;

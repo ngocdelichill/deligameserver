@@ -101,3 +101,46 @@ exports.choose_color = function(req,res){
     const color = req.body.color;
     _io.emit(`choose_color_${room}`,{userId:decoded.user_id,color:color});
 }
+
+
+exports.chinachess = function(req, res){
+    let roomId = req.query.room;
+    let token = req.query.token;
+       
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+
+    //const userlist = await Joiner.find({roomId:roomId, creator:{$ne:decoded.user_id}});
+    userlist = await Joiner.aggregate([
+        {
+            $match: {
+                roomId:roomId
+            }
+        },
+        { "$project": { "userObjId": { "$toObjectId": "$creator" } } },
+        { "$lookup": {
+        "localField": "userObjId",
+        "from": "users",
+        "foreignField": "_id",
+        "as": "player"
+      }}
+        ]);
+        let ul = [];
+    for(let x in userlist){
+        let player = userlist[x].player[0];
+        ul.push({
+            _id:player._id,
+            name:player.name
+        });
+    } 
+
+    Room.findById(roomId, function (err, room){
+
+        User.findById(decoded.user_id, function (err, user) {
+           
+            res.render("play/chinachess", {room: room,user:user,userlist:ul});
+        });
+
+
+    });
+    
+}
