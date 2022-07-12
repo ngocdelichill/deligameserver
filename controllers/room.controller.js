@@ -91,7 +91,8 @@ exports.list = async function (req, res) {
             "level" : room[x].level
         });
     }
-    res.send({list:r,total:total[0]._count});
+    
+    res.send({list:r,total:total[0] == undefined ? 0:total[0]._count});
 }
 
 exports.join = function (req, res) {

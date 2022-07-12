@@ -103,13 +103,11 @@ exports.choose_color = function(req,res){
 }
 
 
-exports.chinachess = function(req, res){
+exports.chinachess = async function(req, res){
     let roomId = req.query.room;
     let token = req.query.token;
        
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-
-    //const userlist = await Joiner.find({roomId:roomId, creator:{$ne:decoded.user_id}});
     userlist = await Joiner.aggregate([
         {
             $match: {

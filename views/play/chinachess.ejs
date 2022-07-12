@@ -1,0 +1,18 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
+<script>var socket = io.connect(location.protocol+'//localhost:3000');</script>
+
+<h1>Room <%=room.name%></h1>
+<small><%=room._id%></small>
+<ul id="player_list">
+    
+    <% 
+    for(x in userlist){
+    %>
+    <li id="player_<%=userlist[x]._id%>"><%=userlist[x].name%> <small></small></li>
+    <%
+    }
+    %>
+</ul>
+<button id="imready">I'm Ready</button>
+
+<script src="/js/script.js"></script>
