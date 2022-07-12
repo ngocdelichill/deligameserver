@@ -147,33 +147,23 @@ exports.chinesechess = async function(req, res){
                 "localField": "userObjId",
                 "from": "users",
                 "foreignField": "_id",
-                "as": "player",
-                "pipeline" : [
-                   { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
-                    {
-                    "$lookup" : {
-                        "from": "plays",
-                        "localField": "creatorObjId",
-                        "foreignField": "creator",
-                        "as": "play",
-                    }
-                }]
+                "as": "player"
             }
         }
     ]);
+    const play = await Play.find({roomId:roomId});
+    
     let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
         ul.push({
             _id:player._id,
-            name:player.name,
-            play : player.play
+            name:player.name
         });
     } 
-
     Room.findById(roomId, function (err, room){
         User.findById(decoded.user_id, function (err, user) {           
-            res.send({room: room,me:user,players:ul});
+            res.send({room: room,me:user,players:ul,play:play});
         });
     });
     
@@ -200,33 +190,24 @@ exports.devchinesechess = async function(req, res){
                 "localField": "userObjId",
                 "from": "users",
                 "foreignField": "_id",
-                "as": "player",
-                "pipeline" : [
-                   { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
-                    {
-                    "$lookup" : {
-                        "from": "plays",
-                        "localField": "creatorObjId",
-                        "foreignField": "creator",
-                        "as": "play",
-                    }
-                }]
+                "as": "player"
             }
         }
     ]);
+    const play = await Play.find({roomId:roomId});
+    
     let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
         ul.push({
             _id:player._id,
-            name:player.name,
-            play : player.play
+            name:player.name
         });
     } 
 
     Room.findById(roomId, function (err, room){
         User.findById(decoded.user_id, function (err, user) {           
-            res.render("play/chinachess", {room: room,user:user,userlist:ul});
+            res.render("play/chinachess", {room: room,me:user,players:ul,play:play});
         });
     });
     
