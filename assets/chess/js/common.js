@@ -100,6 +100,7 @@ window.onload = function(){
 	})
 	*/
 	com.get("tyroPlay").addEventListener("click", function(e) {
+		this.remove();
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {

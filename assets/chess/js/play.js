@@ -3,25 +3,25 @@ var play = play||{};
 
 play.init = function (){
 	
-	play.my				=	1;				//��ҷ�
-	play.map 			=	com.arr2Clone (com.initMap);		//��ʼ������
-	play.nowManKey		=	false;			//����Ҫ����������
-	play.pace 			=	[];				//��¼ÿһ��
-	play.isPlay 		=	false ;			//�Ƿ�������
+	play.my				=	1;				
+	play.map 			=	com.arr2Clone (com.initMap);
+	play.nowManKey		=	false;			
+	play.pace 			=	[];				
+	play.isPlay 		=	false ;			
 	play.mans 			=	com.mans;
 	play.bylaw 			= 	com.bylaw;
 	play.show 			= 	com.show;
 	play.showPane 		= 	com.showPane;
-	play.isOffensive	=	true;			//�Ƿ�����
-	play.depth			=	play.depth || 3;				//�������
+	play.isOffensive	=	true;			
+	play.depth			=	play.depth || 3;				
 	
-	play.isFoul			=	false;	//�Ƿ񷸹泤��
+	play.isFoul			=	false;	
 	
 	
 	
-	com.pane.isShow		=	 false;			//���ط���
+	com.pane.isShow		=	 false;	
 	
-	//��ʼ������
+
 	for (var i=0; i<play.map.length; i++){
 		for (var n=0; n<play.map[i].length; n++){
 			var key = play.map[i][n];
@@ -33,8 +33,7 @@ play.init = function (){
 		}
 	}
 	play.show();
-	
-	//�󶨵���¼�
+
 	com.canvas.addEventListener("click",play.clickCanvas)
 	//clearInterval(play.timer);
 	//com.get("autoPlay").addEventListener("click", function(e) {
@@ -80,14 +79,30 @@ play.init = function (){
 }
 
 
-
-//����
 play.regret = function (){
-	var map  = com.arr2Clone(com.initMap1);
-	//��ʼ����������
-	for (var i=0; i<map.length; i++){
-		for (var n=0; n<map[i].length; n++){
-			var key = map[i][n];
+	
+
+	play.my				=	1;				
+	play.map 			=	com.arr2Clone (com.initMap);
+	play.nowManKey		=	false;			
+	play.pace 			=	[];				
+	play.isPlay 		=	false ;			
+	play.mans 			=	com.mans;
+	play.bylaw 			= 	com.bylaw;
+	play.show 			= 	com.show;
+	play.showPane 		= 	com.showPane;
+	play.isOffensive	=	true;			
+	play.depth			=	play.depth || 3;				
+	
+	play.isFoul			=	false;	
+	
+	
+	
+	com.pane.isShow		=	 false;
+	/*	
+	for (var i=0; i<play.map.length; i++){
+		for (var n=0; n<play.map[i].length; n++){
+			var key = play.map[i][n];
 			if (key){
 				com.mans[key].x=n;
 				com.mans[key].y=i;
@@ -95,43 +110,32 @@ play.regret = function (){
 			}
 		}
 	}
-	var pace= play.pace;
-	pace.pop();
-	pace.pop();
-	
-	for (var i=0; i<pace.length; i++){
-		var p= pace[i].split("")
-		var x = parseInt(p[0], 10);
-		var y = parseInt(p[1], 10);
-		var newX = parseInt(p[2], 10);
-		var newY = parseInt(p[3], 10);
-		var key=map[y][x];
-		//try{
-	 
-		var cMan=map[newY][newX];
-		if (cMan) com.mans[map[newY][newX]].isShow = false;
-		com.mans[key].x = newX;
-		com.mans[key].y = newY;
-		map[newY][newX] = key;
-		delete map[y][x];
-		if (i==pace.length-1){
-			com.showPane(newX ,newY,x,y)	
-		}
-		//} catch (e){
-		//	com.show()
-		//	z([key,p,pace,map])
-			
-		//	}
+*/
+	for(let key in com.keys){
+		if(com.mans[key] != undefined)
+			com.mans[key].isShow = false;
 	}
-	play.map = map;
-	play.my=1;
-	play.isPlay=true;
-	com.show();
+
+	for(let key in _pace){
+		if(_pace[key] != undefined && _pace[key] != 'undefined'){
+			
+			com.mans[key].x = parseInt(_pace[key].split(".")[0]);
+			com.mans[key].y = parseInt(_pace[key].split(".")[1]);
+			com.mans[key].isShow = true;
+
+		}
+		
+	}
+	
+	play.show();
+
+	com.canvas.addEventListener("click",play.clickCanvas)
+	
+
+
 }
 
 
-
-//��������¼�
 play.clickCanvas = function (e){
 	if (!play.isPlay) return false;
 	var key = play.getClickMan(e);
@@ -145,16 +149,16 @@ play.clickCanvas = function (e){
 	}else {
 		play.clickPoint(x,y);	
 	}
-	play.isFoul = play.checkFoul();//����ǲ��ǳ���
+	play.isFoul = play.checkFoul();
 }
 
-//������ӣ����������ѡ�л��߳���
+
 play.clickMan = function (key,x,y){
-	
+
 	var man = com.mans[key];
-	//����
+
 	if (play.nowManKey&&play.nowManKey != key && man.my != com.mans[play.nowManKey ].my){
-		//manΪ���Ե�������
+		
 		if (play.indexOfPs(com.mans[play.nowManKey].ps,[x,y])){
 			man.isShow = false;
 			var pace=com.mans[play.nowManKey].x+""+com.mans[play.nowManKey].y
@@ -170,8 +174,7 @@ play.clickMan = function (key,x,y){
 			xhttp.open("POST", `/plays/chess_mankey`, true);
 			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 			xhttp.send(`key=${play.nowManKey}&pace=${com.mans[play.nowManKey].x},${com.mans[play.nowManKey].y},${x},${y}&deleteKey=${key}`);
-			console.log(play.nowManKey);
-
+			
 			com.mans[play.nowManKey].x = x;
 			com.mans[play.nowManKey].y = y;
 			com.mans[play.nowManKey].alpha = 1
@@ -186,14 +189,15 @@ play.clickMan = function (key,x,y){
 			if (key == "j0") play.showWin (-1);
 			if (key == "J0") play.showWin (1);
 		}
-	// ѡ������
+
 	}else{
 		if (man.my===1){
 			if (com.mans[play.nowManKey]) com.mans[play.nowManKey].alpha = 1 ;
 			man.alpha = 0.6;
 			com.pane.isShow = false;
 			play.nowManKey = key;
-			com.mans[key].ps = com.mans[key].bl(); //����������ŵ�
+			com.mans[key].ps = com.mans[key].bl(); 
+			console.log(com.mans[key].ps);
 			com.dot.dots = com.mans[key].ps
 			com.show();
 			//com.get("selectAudio").start(0);
@@ -202,7 +206,7 @@ play.clickMan = function (key,x,y){
 	}
 }
 
-//����ŵ�
+
 play.clickPoint = function (x,y){
 	var key=play.nowManKey;
 	var man=com.mans[key];
@@ -216,7 +220,7 @@ play.clickPoint = function (x,y){
 			};
 			xhttp.open("POST", `/plays/chess_mankey`, true);
 			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			xhttp.send(`key=${key}&pace=${man.x},${man.y},${x},${y}`); console.log(key);
+			xhttp.send(`key=${key}&pace=${man.x},${man.y},${x},${y}`); 
 			//z(bill.createMove(play.map,man.x,man.y,x,y))
 			delete play.map[man.y][man.x];
 			play.map[y][x] = key;
@@ -272,7 +276,7 @@ play.AIPlay = function (){
 	}else{
 		play.isPlay = false;
 	}
-	console.log(play.isPlay);
+	
  });
  socket.on(`chess_start_${DELI.parameterURL("room")}`,(res)=>{ 
 	var ready = true;
@@ -307,7 +311,6 @@ play.DevPlay = function(x1,y1,x2,y2){
 	play.my = 1 ;
 }
 
-//����Ƿ񳤽�
 play.checkFoul = function(){
 	var p=play.pace;
 	var len=parseInt(p.length,10);
@@ -321,7 +324,7 @@ play.checkFoul = function(){
 
 play.AIclickMan = function (key,x,y){
 	var man = com.mans[key];
-	//����
+
 	man.isShow = false;
 	delete play.map[com.mans[play.nowManKey].y][com.mans[play.nowManKey].x];
 	play.map[y][x] = play.nowManKey;

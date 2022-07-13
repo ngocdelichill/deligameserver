@@ -53,8 +53,10 @@ exports.finance = async function (req, res) {
 
 const prevHash = function(room){
     Play.findOne({roomId:room}, function(err, play){
-        if(play != null)
+        if(play != null){
+            console.log(play.token);
             return play.token;
+        }
         return "";
     }).sort({_id:-1}).limit(1);
 };
@@ -190,21 +192,35 @@ exports.devchinesechess = async function(req, res){
                 "localField": "userObjId",
                 "from": "users",
                 "foreignField": "_id",
-                "as": "player"
+                "as": "player",
+                "pipeline" : [
+                    { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
+                    
+                     {
+                     "$lookup" : {
+                         "from": "plays",
+                         "localField": "creatorObjId",
+                         "foreignField": "creator",
+                         "as": "play",
+                         pipeline : [{$match : {pace:"ready"}}]
+                     },
+                    
+                 }]
             }
         }
     ]);
-    const play = await Play.find({roomId:roomId});
-    
+    const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
     let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
+        let ready = player.play[0].pace;
         ul.push({
             _id:player._id,
-            name:player.name
+            name:player.name,
+            isReady:ready
         });
     } 
-
+    
     Room.findById(roomId, function (err, room){
         User.findById(decoded.user_id, function (err, user) {           
             res.render("play/chinachess", {room: room,me:user,players:ul,play:play});
@@ -213,24 +229,42 @@ exports.devchinesechess = async function(req, res){
     
 }
 
-exports.chess_start = function(req,res){
+exports.chess_start = async function(req,res){
     const url = new URL(req.headers.referer);
     const token = url.searchParams.get("token");
     const room = url.searchParams.get("room");
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    _io.emit(`chess_start_${room}`,{userId:decoded.user_id});
+    Play.find({roomId:room,pace:'ready'},function(err, play){
+        if(play.length == 2){
+            const pace = "C0:0.0,M0:1.0,X0:2.0,S0:3.0,J0:4.0,S1:5.0,X1:6.0,M1:7.0,C1:8.0,P0:1.2,P1:7.2,Z0:0.3,Z1:2.3,Z2:4.3,Z3:6.3,Z4:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
+            const timestamp = new Date();
+            var data = {roomId:room,creator:decoded.user_id,pace:pace,createdAt:timestamp};
+            let tk = SHA256(prevHash(room) + timestamp + JSON.stringify(data));
+            data.token = tk;
+            
+            const newPlay = new Play(data);
+            newPlay.save(function(){
+                _io.emit(`chess_start_${room}`,{userId:decoded.user_id});
+                res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+            });
+            
+        }else{
+            res.status(200).send({code:0,msg:'Players are not ready'});
+        }
+    });
+    
 }
 
-exports.chess_mankey = function(req,res){
+
+
+exports.chess_mankey = async function(req,res){
     const url = new URL(req.headers.referer);
     const token = url.searchParams.get("token");
     const room = url.searchParams.get("room");
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const {key,pace,deleteKey} = req.body; 
 
-    if(deleteKey != undefined){
-        //delKey = deleteKey.toString().toUpperCase();
-    }                    
+                     
     let k = key.toString().toUpperCase();
     var tmp = [];
     pe = pace.split(",");
@@ -239,6 +273,39 @@ exports.chess_mankey = function(req,res){
     tmp.push(8 - parseInt(pe[2]));
     tmp.push(9 - parseInt(pe[3]));
     pa = tmp.join(",");
-    _io.emit(`chess_mankey_${room}`,{userId:decoded.user_id,pace:pa});
-    res.status(200).send({userId:decoded.user_id,pace:pa})
+    const play = await Play.findOne({roomId:room}).sort({_id:-1}).limit(1);
+    const a = paceToObject(play.pace);
+    a[key] = `${pe[2]}.${pe[3]}`;
+
+    console.log(a);
+    if(deleteKey != undefined){
+        delete a[deleteKey];
+        console.log('delete: '+deleteKey);
+    }   
+    let timestamp = new Date();
+    var data = {creator:decoded.user_id,roomId:room,pace:paceToString(a),createdAt:timestamp};
+    let tk = SHA256(prevHash(room) + timestamp + JSON.stringify(data));
+    data.token = tk;            
+    const newPlay = new Play(data);
+    newPlay.save(function(err,pl){
+        _io.emit(`chess_mankey_${room}`,{userId:decoded.user_id,pace:pa});
+        res.status(200).send({userId:decoded.user_id,pace:pa})
+    });
+}
+
+const paceToString = function(pace){
+    var a = [];
+    for(x in pace){
+        a.push(x+":"+pace[x]); 
+    }
+    return a.join(",");
+}
+const paceToObject = function(pace){
+    var pa = {};
+    var a = pace.split(",");
+    for(x in a){
+        b = a[x].split(":");
+        pa[b[0]] = b[1];
+    }
+    return pa;
 }
