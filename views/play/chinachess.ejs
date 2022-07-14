@@ -3,7 +3,6 @@
 
 <script src="/js/script.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
-
 <script>
     const _baseurl = "deligames.herokuapp.com";
     const room = JSON.parse(`<%-JSON.stringify(room)%>`);
@@ -11,7 +10,13 @@
     const _me = JSON.parse('<%-JSON.stringify(me)%>');
     var _play = JSON.parse('<%-JSON.stringify(play)%>');
     var _pace = {};
-    
+
+    if(_baseurl == 'localhost'){
+        var socket = io.connect(location.protocol+'//'+_baseurl+':3000');
+    }else{
+        var socket = io.connect('https://'+_baseurl);
+    }
+    if(_play != null)
     if(_play.pace != 'ready' && _play.pace != undefined && _play.pace != 'undefined'){ 
         p = _play.pace.split(",");
             for(x in p){               
@@ -51,7 +56,7 @@
             },500);
         }
 </script>
-<script>var socket = io.connect(location.protocol+'//'+_baseurl+':3000');</script>
+
 <script>
     socket.on(`room_join_${DELI.parameterURL("room")}`,function(res){
         var li = document.createElement("li");

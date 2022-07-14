@@ -192,7 +192,7 @@ exports.chinesechess = async function(req, res){
 exports.devchinesechess = async function(req, res){
     let roomId = req.query.room;
     let token = req.query.token;
-       
+  
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     userlist = await Joiner.aggregate([
         {
