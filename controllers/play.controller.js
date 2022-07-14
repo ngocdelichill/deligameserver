@@ -133,9 +133,9 @@ exports.choose_color = function(req,res){
 }
 
 exports.chinesechess = async function(req, res){
-    let roomId = req.query.room;
-    let token = req.query.token;
-       
+    //let roomId = req.query.room;
+    //let token = req.query.token;
+    const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     userlist = await Joiner.aggregate([
         {
