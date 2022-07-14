@@ -152,18 +152,32 @@ exports.chinesechess = async function(req, res){
                 "localField": "userObjId",
                 "from": "users",
                 "foreignField": "_id",
-                "as": "player"
+                "as": "player",
+                "pipeline" : [
+                    { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
+                    
+                     {
+                     "$lookup" : {
+                         "from": "plays",
+                         "localField": "creatorObjId",
+                         "foreignField": "creator",
+                         "as": "play",
+                         pipeline : [{$match : {pace:"ready"}}]
+                     },
+                    
+                 }]
             }
         }
     ]);
-    const play = await Play.find({roomId:roomId});
-    
+    const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
     let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
+        let ready = player.play[0].pace;
         ul.push({
             _id:player._id,
-            name:player.name
+            name:player.name,
+            isReady:ready
         });
     } 
     Room.findById(roomId, function (err, room){
