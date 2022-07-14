@@ -178,7 +178,7 @@ exports.chinesechess = async function(req, res){
         ul.push({
             _id:player._id,
             name:player.name,
-            isReady:ready
+            isReady:(ready == 'ready' ? true:false)
         });
     }  
     Room.findById(roomId, function (err, room){
@@ -235,7 +235,7 @@ exports.devchinesechess = async function(req, res){
         ul.push({
             _id:player._id,
             name:player.name,
-            isReady:ready
+            isReady:(ready == 'ready' ? true:false)
         });
     } 
     

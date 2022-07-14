@@ -70,7 +70,7 @@
         if(user != null)
             user.remove();
     });
-    socket.on(`ready_${DELI.parameterURL("room")}`,function(res){
+    socket.on(`ready_${DELI.parameterURL("room")}`,function(res){ console.log(res);
         var user = document.getElementById(`player_${res}`);
         if(user != null){
             user.getElementsByTagName("small")[0].innerHTML = "Ready";
