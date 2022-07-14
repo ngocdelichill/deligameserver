@@ -173,13 +173,13 @@ exports.chinesechess = async function(req, res){
     let ul = [];
     for(let x in userlist){
         let player = userlist[x].player[0];
-        let ready = player.play[0].pace;
+        let ready = player.play.length > 0 ? player.play[0].pace:"";
         ul.push({
             _id:player._id,
             name:player.name,
             isReady:ready
         });
-    } 
+    }  
     Room.findById(roomId, function (err, room){
         User.findById(decoded.user_id, function (err, user) {           
             res.send({room: room,me:user,players:ul,play:play});
