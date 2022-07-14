@@ -5,7 +5,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
 <script>
     const PORT = 3000;
-    const _baseurl = location.host == "localhost:"+PORT ? location.host:"deligames.herokuapp.com";
+    const _baseurl = "deligames.herokuapp.com"; 
+    //const _baseurl = location.host == "localhost:"+PORT ? location.host:"deligames.herokuapp.com";
     const room = JSON.parse(`<%-JSON.stringify(room)%>`);
     const _player = JSON.parse('<%-JSON.stringify(players)%>');
     const _me = JSON.parse('<%-JSON.stringify(me)%>');
@@ -15,7 +16,7 @@
     if(_baseurl == 'localhost:'+PORT){
         var socket = io.connect(location.protocol+'//'+_baseurl);
     }else{
-        var socket = io.connect('https://'+_baseurl);
+        var socket = io.connect('http://'+_baseurl);
     }
     if(_play != null)
     if(_play.pace != 'ready' && _play.pace != undefined && _play.pace != 'undefined'){ 

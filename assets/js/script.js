@@ -42,8 +42,12 @@ function imready(obj){
             console.log(JSON.parse(this.responseText));
         }
     };
-    xhttp.open("GET", `/plays/ready`, true);
-    xhttp.send();
+    let token = DELI.parameterURL("token");
+		let roomId = DELI.parameterURL("room");
+    
+    xhttp.open("POST", `/plays/ready`, true);
+    xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhttp.send(`token=${token}&roomId=${roomId}`);
 }
 
 
