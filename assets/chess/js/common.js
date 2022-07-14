@@ -107,9 +107,11 @@ window.onload = function(){
 				console.log(this.responseText);
 			}
 		};
-		xhttp.open("GET", `/plays/chess_start`, true);
+		let token = DELI.parameterURL("token");
+		let roomId = DELI.parameterURL("room");
+		xhttp.open("POST", `/plays/chess_start`, true);
 		xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-		xhttp.send();
+		xhttp.send(`token=${token}&roomId=${roomId}`);
 	})
 	/*
 	com.get("stypeBn").addEventListener("click", function(e) {

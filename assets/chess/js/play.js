@@ -179,7 +179,9 @@ play.clickMan = function (key,x,y){
 			};
 			xhttp.open("POST", `/plays/chess_mankey`, true);
 			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			xhttp.send(`key=${play.nowManKey}&pace=${com.mans[play.nowManKey].x},${com.mans[play.nowManKey].y},${x},${y}&deleteKey=${key}`);
+			let token = DELI.parameterURL("token");
+			let roomId = DELI.parameterURL("room");
+			xhttp.send(`token=${token}&roomId=${roomId}&key=${play.nowManKey}&pace=${com.mans[play.nowManKey].x},${com.mans[play.nowManKey].y},${x},${y}&deleteKey=${key}`);
 			
 			com.mans[play.nowManKey].x = x;
 			com.mans[play.nowManKey].y = y;
@@ -226,7 +228,9 @@ play.clickPoint = function (x,y){
 			};
 			xhttp.open("POST", `/plays/chess_mankey`, true);
 			xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			xhttp.send(`key=${key}&pace=${man.x},${man.y},${x},${y}`); 
+			let token = DELI.parameterURL("token");
+			let roomId = DELI.parameterURL("room");
+			xhttp.send(`token=${token}&roomId=${roomId}&key=${key}&pace=${man.x},${man.y},${x},${y}`); 
 			//z(bill.createMove(play.map,man.x,man.y,x,y))
 			delete play.map[man.y][man.x];
 			play.map[y][x] = key;
