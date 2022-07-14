@@ -18,7 +18,7 @@
                 if(a.length > 1)
                 if(a[1] != undefined && a[1] != 'undefined'){
                     if(room.creator != _me._id){
-              /*
+              
                         var b = a[1].split(".");
                         var m = 8 - parseInt(b[0]);
                         var n = 9 - parseInt(b[1]);                
@@ -27,8 +27,8 @@
                         }else{
                             _pace[a[0].toLowerCase()] = `${m}.${n}`;
                         }
-                */
-                    _pace[a[0]] = a[1];        
+                
+                    //_pace[a[0]] = a[1];        
                     }else{
                         _pace[a[0]] = a[1];
                     }
@@ -81,7 +81,7 @@
             _im_ready = players[x].isReady;
         }
     %>
-    <li id="player_<%=players[x]._id%>"><%=players[x].name%> <small><%=players[x].ready == 'ready' ? 'Ready':''%></small></li>
+    <li id="player_<%=players[x]._id%>"><%=players[x].name%> <small><%=players[x].isReady == 'ready' ? 'Ready':''%></small></li>
     <%
     }
     %>

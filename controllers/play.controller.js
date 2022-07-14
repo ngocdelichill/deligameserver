@@ -2,9 +2,12 @@ const Room = require('../models/room.model');
 const User = require('../models/user.model');
 const Joiner = require('../models/joiner.model');
 const Play = require('../models/play.model');
+const ObjectId = require('mongoose').Types.ObjectId; 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 
 const jwt = require("jsonwebtoken");
+const { decode } = require('punycode');
+const { isObjectIdOrHexString } = require('mongoose');
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
@@ -260,12 +263,12 @@ exports.chess_start = async function(req,res){
 exports.chess_mankey = async function(req,res){
     const url = new URL(req.headers.referer);
     const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
+    const roomId = url.searchParams.get("room");
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const {key,pace,deleteKey} = req.body; 
-
-                     
-    let k = key.toString().toUpperCase();
+    const room = await Room.findOne({_id: new ObjectId(roomId)});
+    const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
+    var k = key;
     var tmp = [];
     pe = pace.split(",");
     tmp.push(8 - parseInt(pe[0]));
@@ -273,22 +276,35 @@ exports.chess_mankey = async function(req,res){
     tmp.push(8 - parseInt(pe[2]));
     tmp.push(9 - parseInt(pe[3]));
     pa = tmp.join(",");
-    const play = await Play.findOne({roomId:room}).sort({_id:-1}).limit(1);
+    
     const a = paceToObject(play.pace);
-    a[key] = `${pe[2]}.${pe[3]}`;
+    var delKey = deleteKey;
 
-    console.log(a);
-    if(deleteKey != undefined){
-        delete a[deleteKey];
-        console.log('delete: '+deleteKey);
-    }   
+    if(decoded.user_id != room.creator){
+        if(key == key.toLowerCase()){
+            k = key.toUpperCase();
+        }
+        if(delKey != undefined){
+            if(delKey == delKey.toUpperCase()){
+                delKey = delKey.toLowerCase();
+            }
+        }
+        a[k] = `${8 - parseInt(pe[2])}.${9 - parseInt(pe[3])}`;
+    }else{
+        a[k] = `${pe[2]}.${pe[3]}`;
+    }
+    
+    if(delKey != undefined){
+        delete a[delKey];
+    }
+
     let timestamp = new Date();
-    var data = {creator:decoded.user_id,roomId:room,pace:paceToString(a),createdAt:timestamp};
-    let tk = SHA256(prevHash(room) + timestamp + JSON.stringify(data));
+    var data = {creator:decoded.user_id,roomId:roomId,pace:paceToString(a),createdAt:timestamp};
+    let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
     data.token = tk;            
     const newPlay = new Play(data);
     newPlay.save(function(err,pl){
-        _io.emit(`chess_mankey_${room}`,{userId:decoded.user_id,pace:pa});
+        _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,pace:pa});
         res.status(200).send({userId:decoded.user_id,pace:pa})
     });
 }

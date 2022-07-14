@@ -80,10 +80,16 @@ play.init = function (){
 
 
 play.regret = function (){
-	
+	var initMap = Array.from(Array(10), () => new Array(9));
+	for(let x in _pace){
+		var y = _pace[x].split(".");
+		var a = parseInt(y[0]);
+		var b = parseInt(y[1]);
+		initMap[b][a] = x;
+	}
 
 	play.my				=	1;				
-	play.map 			=	com.arr2Clone (com.initMap);
+	play.map 			=	com.arr2Clone (initMap);
 	play.nowManKey		=	false;			
 	play.pace 			=	[];				
 	play.isPlay 		=	false ;			
@@ -154,7 +160,7 @@ play.clickCanvas = function (e){
 
 
 play.clickMan = function (key,x,y){
-
+	console.log(key,x,y);
 	var man = com.mans[key];
 
 	if (play.nowManKey&&play.nowManKey != key && man.my != com.mans[play.nowManKey ].my){
