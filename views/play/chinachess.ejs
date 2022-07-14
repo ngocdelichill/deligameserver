@@ -100,8 +100,8 @@
 		<audio src="audio/select.wav" id="selectAudio" preload="auto"></audio>
 		<div>
 			<div class="bn_box" id="bnBox">
-        <%
-        if(room.creator == me._id.toString()){
+        <% 
+        if(play != null && room.creator == me._id.toString()){
             if(play.pace == 'ready'){
         %>
                 <button id="tyroPlay">Start</button>
