@@ -17,7 +17,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
         //origin: `http://localhost:${port}`,
-        origin: `https://deligamesdemo.vercel.app`,
+        origin: [`http://localhost:${port}`,`https://deligamesdemo.vercel.app`],
         methods: ["GET", "POST"],
         transports: ['websocket', 'polling'],
         credentials: true

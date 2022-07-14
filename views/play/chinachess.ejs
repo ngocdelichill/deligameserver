@@ -4,15 +4,16 @@
 <script src="/js/script.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
 <script>
-    const _baseurl = "deligames.herokuapp.com";
+    const PORT = 3000;
+    const _baseurl = location.host == "localhost:"+PORT ? location.host:"deligames.herokuapp.com";
     const room = JSON.parse(`<%-JSON.stringify(room)%>`);
     const _player = JSON.parse('<%-JSON.stringify(players)%>');
     const _me = JSON.parse('<%-JSON.stringify(me)%>');
     var _play = JSON.parse('<%-JSON.stringify(play)%>');
     var _pace = {};
 
-    if(_baseurl == 'localhost'){
-        var socket = io.connect(location.protocol+'//'+_baseurl+':3000');
+    if(_baseurl == 'localhost:'+PORT){
+        var socket = io.connect(location.protocol+'//'+_baseurl);
     }else{
         var socket = io.connect('https://'+_baseurl);
     }
@@ -32,9 +33,7 @@
                             _pace[a[0].toUpperCase()] = `${m}.${n}`;
                         }else{
                             _pace[a[0].toLowerCase()] = `${m}.${n}`;
-                        }
-                
-                    //_pace[a[0]] = a[1];        
+                        }    
                     }else{
                         _pace[a[0]] = a[1];
                     }
@@ -48,6 +47,7 @@
                 if(typeof play == 'object'){
                     play.regret();
                     play.isPlay = false;
+                    if(_play != null)
                     if(_play.creator != _me._id){
                         play.isPlay = true;
                     }
