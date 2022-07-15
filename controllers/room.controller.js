@@ -149,12 +149,25 @@ exports.join = function (req, res) {
 }  
 
 exports.out = async function(req,res){
-    const {token, roomId,password} = req.body;
+    const {token, roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Joiner.deleteOne({creator:decoded.user_id},function(err){
-        _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
-        _io.emit(`room_out`,{roomId:roomId,userId:userId});
+    Room.findById(roomId,function(err,room){
+        if(room.creator == decoded.user_id){
+            Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
+                Joiner.deleteMany({roomId:roomId},function(){
+                    res.send({code:2,msg:"Room master is out!"});
+                    _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
+                });                                
+            });
+        }else{
+            Joiner.deleteOne({creator:decoded.user_id},function(err){
+                _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
+                _io.emit(`room_out`,{roomId:roomId,userId:userId});
+                res.send({code:1,msg:""});
+            });
+        }
     });
+    
 }
 
 exports.search = async function(req,res){
