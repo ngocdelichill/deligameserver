@@ -42,6 +42,11 @@ const RoomSchema = new mongoose.Schema({
       type: Number,
       required: true,
       default: 1
+    },
+    status : {
+      type: Number,
+      required: true,
+      default: 0
     }
   });
 

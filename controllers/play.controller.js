@@ -255,18 +255,20 @@ exports.chess_start = async function(req,res){
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Play.find({roomId:roomId,pace:'ready'},function(err, play){
         if(play.length == 2){
-            const pace = "C0:0.0,M0:1.0,X0:2.0,S0:3.0,J0:4.0,S1:5.0,X1:6.0,M1:7.0,C1:8.0,P0:1.2,P1:7.2,Z0:0.3,Z1:2.3,Z2:4.3,Z3:6.3,Z4:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
-            const timestamp = new Date();
-            var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
-            let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-            data.token = tk;
-            
-            const newPlay = new Play(data);
-            newPlay.save(function(){
-                _io.emit(`chess_start_${roomId}`,{userId:decoded.user_id});
-                res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+            Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},function(err, r){
+                const pace = "C0:0.0,M0:1.0,X0:2.0,S0:3.0,J0:4.0,S1:5.0,X1:6.0,M1:7.0,C1:8.0,P0:1.2,P1:7.2,Z0:0.3,Z1:2.3,Z2:4.3,Z3:6.3,Z4:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
+                const timestamp = new Date();
+                var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
+                let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                data.token = tk;
+                
+                const newPlay = new Play(data);
+                newPlay.save(function(){
+                    _io.emit(`chess_start_${roomId}`,true);
+                    _io.emit(`room_remove`,{roomId:roomId});
+                    res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                });
             });
-            
         }else{
             res.status(200).send({code:0,msg:'Players are not ready'});
         }
@@ -284,46 +286,52 @@ exports.chess_mankey = async function(req,res){
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const {key,pace,deleteKey} = req.body; 
     const room = await Room.findOne({_id: new ObjectId(roomId)});
-    const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
-    var k = key;
-    var tmp = [];
-    pe = pace.split(",");
-    tmp.push(8 - parseInt(pe[0]));
-    tmp.push(9 - parseInt(pe[1]));
-    tmp.push(8 - parseInt(pe[2]));
-    tmp.push(9 - parseInt(pe[3]));
-    pa = tmp.join(",");
+    if(room.status == 1){
+        const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
+        var k = key;
+        var tmp = [];
+        pe = pace.split(",");
+        tmp.push(8 - parseInt(pe[0]));
+        tmp.push(9 - parseInt(pe[1]));
+        tmp.push(8 - parseInt(pe[2]));
+        tmp.push(9 - parseInt(pe[3]));
+        pa = tmp.join(",");
+        
+        const a = paceToObject(play.pace);
+        var delKey = deleteKey;
     
-    const a = paceToObject(play.pace);
-    var delKey = deleteKey;
-
-    if(decoded.user_id != room.creator){
-        if(key == key.toLowerCase()){
-            k = key.toUpperCase();
-        }
-        if(delKey != undefined){
-            if(delKey == delKey.toUpperCase()){
-                delKey = delKey.toLowerCase();
+        if(decoded.user_id != room.creator){
+            if(key == key.toLowerCase()){
+                k = key.toUpperCase();
             }
+            if(delKey != undefined){
+                if(delKey == delKey.toUpperCase()){
+                    delKey = delKey.toLowerCase();
+                }
+            }
+            a[k] = `${8 - parseInt(pe[2])}.${9 - parseInt(pe[3])}`;
+        }else{
+            a[k] = `${pe[2]}.${pe[3]}`;
         }
-        a[k] = `${8 - parseInt(pe[2])}.${9 - parseInt(pe[3])}`;
-    }else{
-        a[k] = `${pe[2]}.${pe[3]}`;
+        
+        if(delKey != undefined){
+            delete a[delKey];
+        }
+    
+        let timestamp = new Date();
+        var data = {creator:decoded.user_id,roomId:roomId,pace:paceToString(a),createdAt:timestamp};
+        let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+        data.token = tk;            
+        const newPlay = new Play(data);
+        newPlay.save(function(err,pl){
+            _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,pace:pa});
+            res.status(200).send({userId:decoded.user_id,pace:pa})
+        });
+    }
+    if(room.status == 2){
+        res.status(200).send({code:0,msg:"The game ends"});
     }
     
-    if(delKey != undefined){
-        delete a[delKey];
-    }
-
-    let timestamp = new Date();
-    var data = {creator:decoded.user_id,roomId:roomId,pace:paceToString(a),createdAt:timestamp};
-    let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-    data.token = tk;            
-    const newPlay = new Play(data);
-    newPlay.save(function(err,pl){
-        _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,pace:pa});
-        res.status(200).send({userId:decoded.user_id,pace:pa})
-    });
 }
 
 const paceToString = function(pace){

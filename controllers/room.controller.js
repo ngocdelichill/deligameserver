@@ -2,9 +2,13 @@ const jwt = require("jsonwebtoken");
 const Room = require('../models/room.model');
 const Joiner = require('../models/joiner.model');
 const User = require('../models/user.model');
+const Play = require('../models/play.model');
 const { parse } = require("dotenv");
 const { decode } = require("jsonwebtoken");
 const ObjectId = require('mongoose').Types.ObjectId; 
+const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
+
+
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
@@ -122,17 +126,24 @@ exports.join = function (req, res) {
                 let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
                 newJoin.save().then(function(join){
                     User.findById(decoded.user_id,function(err,user){
+                        if(room.creator == decoded.user_id){
+                            const timestamp = new Date();
+                             var data = {roomId:roomId,pace:'ready',creator:decoded.user_id,createdAt:timestamp};
+                           
+                             let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                             data.token = tk;
+                           
+                             const newPlay = new Play(data);
+                             newPlay.save();   
+                        }
                         _io.emit(`room_join_${roomId}`,user);
-                    });
-                    
+                    });            
                     res.send(join);
                 });
             }else{
                 res.send({code:0,msg:"Password is incorrect"});
             }            
         });
-        
-
     });
 }  
 
@@ -157,3 +168,12 @@ exports.search = async function(req,res){
     }
 }
 
+const prevHash = function(room){
+    Play.findOne({roomId:room}, function(err, play){
+        if(play != null){
+            console.log(play.token);
+            return play.token;
+        }
+        return "";
+    }).sort({_id:-1}).limit(1);
+};

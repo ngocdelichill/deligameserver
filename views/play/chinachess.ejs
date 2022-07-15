@@ -1,23 +1,29 @@
 <script
   src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
-<script src="/js/script.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.js"></script>
 <script>
-    const PORT = 3000;
-    const _baseurl = "deligames.herokuapp.com"; 
-    //const _baseurl = location.host == "localhost:"+PORT ? location.host:"deligames.herokuapp.com";
     const room = JSON.parse(`<%-JSON.stringify(room)%>`);
     const _player = JSON.parse('<%-JSON.stringify(players)%>');
     const _me = JSON.parse('<%-JSON.stringify(me)%>');
     var _play = JSON.parse('<%-JSON.stringify(play)%>');
     var _pace = {};
-
+    const PORT = 3000;
+    //const _baseurl = "deligames.herokuapp.com"; 
+    const _baseurl = location.host == "localhost:"+PORT ? location.host:"deligames.herokuapp.com";
     if(_baseurl == 'localhost:'+PORT){
         var socket = io.connect(location.protocol+'//'+_baseurl);
     }else{
         var socket = io.connect('http://'+_baseurl);
     }
+</script>
+<script src="/js/script.js"></script>
+<script>
+    
+    
+
+
     if(_play != null)
     if(_play.pace != 'ready' && _play.pace != undefined && _play.pace != 'undefined'){ 
         p = _play.pace.split(",");
@@ -77,6 +83,7 @@
         }
     });
     </script>
+   
 <h1>Room <%=room.name%></h1>
 <small><%=room._id%></small>
 <ul id="player_list">

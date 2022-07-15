@@ -66,4 +66,33 @@ const PLAYER = {
   }
 }
 
-  
+socket.on(`chess_mankey_${DELI.parameterURL("room")}`,(res)=>{
+	if(res.userId != _me._id){
+		var pace = res.pace.split(",");
+		var x1 = parseInt(pace[0]);
+		var y1 = parseInt(pace[1]);
+		var x2 = parseInt(pace[2]);
+		var y2 = parseInt(pace[3]);
+		play.DevPlay(x1,y1,x2,y2);		
+		play.isPlay = true;
+	}else{
+		play.isPlay = false;
+	}
+	
+ });
+ socket.on(`chess_start_${DELI.parameterURL("room")}`,(res)=>{ 
+	var ready = true;	
+	if (ready){			
+		com.get("chessRight").style.display = "none";
+		com.get("moveInfo").style.display = "block";
+		com.get("moveInfo").innerHTML="";
+		play.depth = 3;
+		play.init();		
+		if(res.userId == _me._id){
+			setTimeout(()=>{		
+				play.isPlay = true;
+			},3000);		
+		}	
+		
+	}
+ });
