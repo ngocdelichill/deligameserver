@@ -81,6 +81,10 @@ exports.ready = function(req,res){
             newPlay.save(function(err,play){
                 res.send(play);
             });
+        }else{
+            Play.deleteOne({roomId:roomId,creator:decoded.user_id,pace:'ready'},function(err,play){
+                
+            });
         }
     });
     _io.emit(`ready_${roomId}`,decoded.user_id);
@@ -281,9 +285,9 @@ exports.chess_mankey = async function(req,res){
     //const url = new URL(req.headers.referer);
     //const token = url.searchParams.get("token");
     //const roomId = url.searchParams.get("room");
-    const {token,roomId} = req.body;
+  
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const {key,pace,deleteKey} = req.body; 
+    const {token,roomId,key,pace,deleteKey} = req.body; 
     const room = await Room.findOne({_id: new ObjectId(roomId)});
     if(room.status == 1){
         const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
