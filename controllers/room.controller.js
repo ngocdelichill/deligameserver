@@ -19,7 +19,8 @@ exports.create = function (req, res) {
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game}
     );
-    newRom.save(function (err,room){    
+    newRom.save(function (err,room){
+        _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game});
         res.send(room);
     });
 }
@@ -52,7 +53,7 @@ exports.list = async function (req, res) {
         {
             $match: {
                 $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
-                $and: [{classRoom : classRoom}, {level: level}, {game: game}]
+                $and: [{classRoom : classRoom}, {level: level}, {game: game}, {status:0}]
             }
         },
         { "$lookup": {
@@ -122,28 +123,33 @@ exports.join = function (req, res) {
     Joiner.deleteOne({creator:decoded.user_id},function(err){
         _io.emit(`room_remove`,decoded.user_id);
         Room.findById(req.body.roomId,function(err,room){
-            if(room.password == password){
-                let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
-                newJoin.save().then(function(join){
-                    User.findById(decoded.user_id,function(err,user){
-                        if(room.creator == decoded.user_id){
-                            const timestamp = new Date();
-                             var data = {roomId:roomId,pace:'ready',creator:decoded.user_id,createdAt:timestamp};
-                           
-                             let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                             data.token = tk;
-                           
-                             const newPlay = new Play(data);
-                             newPlay.save();   
-                        }
-                        _io.emit(`room_join_${roomId}`,user);
-                        _io.emit(`room_refesh`,{roomId:roomId,player:user});
-                    });            
-                    res.send(join);
-                });
+            if(room.length >0 ){
+                if(room.password == password){
+                    let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
+                    newJoin.save().then(function(join){
+                        User.findById(decoded.user_id,function(err,user){
+                            if(room.creator == decoded.user_id){
+                                const timestamp = new Date();
+                                 var data = {roomId:roomId,pace:'ready',creator:decoded.user_id,createdAt:timestamp};
+                               
+                                 let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                                 data.token = tk;
+                               
+                                 const newPlay = new Play(data);
+                                 newPlay.save();   
+                            }
+                            _io.emit(`room_join_${roomId}`,user);
+                            _io.emit(`room_refesh`,{roomId:roomId,player:user});
+                        });            
+                        res.send(join);
+                    });
+                }else{
+                    res.send({code:0,msg:"Password is incorrect"});
+                }    
             }else{
-                res.send({code:0,msg:"Password is incorrect"});
-            }            
+                res.send({code:-1,msg:"Room not found"});
+            }
+                    
         });
     });
 }  
@@ -154,7 +160,7 @@ exports.out = async function(req,res){
     Room.findById(roomId,function(err,room){
         if(room.creator == decoded.user_id){
             Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
-                Joiner.deleteMany({roomId:roomId},function(){
+                Joiner.remove({roomId:roomId},function(){
                     res.send({code:2,msg:"Room master is out!"});
                     _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                 });                                
