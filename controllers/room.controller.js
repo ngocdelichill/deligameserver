@@ -148,6 +148,15 @@ exports.join = function (req, res) {
     });
 }  
 
+exports.out = async function(req,res){
+    const {token, roomId,password} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Joiner.deleteOne({creator:decoded.user_id},function(err){
+        _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
+        _io.emit(`room_out`,{roomId:roomId,userId:userId});
+    });
+}
+
 exports.search = async function(req,res){
     const {keyword, classRoom, level} = req.query;
     if(typeof keyword === 'string'){

@@ -10,6 +10,7 @@ router.get('/test', room.test);
 router.post('/create',room.create);
 router.get('/list',room.list);
 router.post('/join',room.join);
+router.post('/out',room.out);
 router.get('/search',room.search);
 router.patch('/update',room.update);
 
