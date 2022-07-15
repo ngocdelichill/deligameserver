@@ -168,7 +168,7 @@ exports.out = async function(req,res){
         }else{
             Joiner.deleteOne({creator:decoded.user_id},function(err){
                 _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
-                _io.emit(`room_out`,{roomId:roomId,userId:userId});
+                _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
                 res.send({code:1,msg:""});
             });
         }
