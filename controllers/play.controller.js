@@ -80,14 +80,16 @@ exports.ready = function(req,res){
             const newPlay = new Play(data);
             newPlay.save(function(err,play){
                 res.send(play);
+                _io.emit(`ready_${roomId}`,{userId:decoded.user_id,isReady:true});
             });
         }else{
             Play.deleteOne({roomId:roomId,creator:decoded.user_id,pace:'ready'},function(err,play){
-                
+                res.send({isReady:false});
+                _io.emit(`ready_${roomId}`,{userId:decoded.user_id,isReady:false});
             });
         }
     });
-    _io.emit(`ready_${roomId}`,decoded.user_id);
+    
    
 }
 
