@@ -137,6 +137,7 @@ exports.join = function (req, res) {
                              newPlay.save();   
                         }
                         _io.emit(`room_join_${roomId}`,user);
+                        _io.emit(`room_refesh`,{roomId:roomId,player:user});
                     });            
                     res.send(join);
                 });

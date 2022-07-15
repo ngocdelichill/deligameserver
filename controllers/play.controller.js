@@ -253,6 +253,7 @@ exports.chess_start = async function(req,res){
     //const room = url.searchParams.get("room");
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
+
     Play.find({roomId:roomId,pace:'ready'},function(err, play){
         if(play.length == 2){
             Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},function(err, r){
@@ -264,7 +265,7 @@ exports.chess_start = async function(req,res){
                 
                 const newPlay = new Play(data);
                 newPlay.save(function(){
-                    _io.emit(`chess_start_${roomId}`,true);
+                    _io.emit(`chess_start_${roomId}`,r.creator);
                     _io.emit(`room_remove`,{roomId:roomId});
                     res.status(200).send({code:1,msg:'Countdown 3s to play game'});
                 });
@@ -275,8 +276,6 @@ exports.chess_start = async function(req,res){
     });
     
 }
-
-
 
 exports.chess_mankey = async function(req,res){
     //const url = new URL(req.headers.referer);
