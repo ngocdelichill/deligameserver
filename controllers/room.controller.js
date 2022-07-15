@@ -122,8 +122,8 @@ exports.join = function (req, res) {
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Joiner.deleteOne({creator:decoded.user_id},function(err){
         _io.emit(`room_remove`,decoded.user_id);
-        Room.findById(req.body.roomId,function(err,room){
-            if(room.length >0 ){
+        Room.findById(req.body.roomId,function(err,room){           
+            if(room != null && room != undefined && room != {} ){
                 if(room.password == password){
                     let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
                     newJoin.save().then(function(join){
