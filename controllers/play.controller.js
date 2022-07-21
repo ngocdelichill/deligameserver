@@ -287,9 +287,9 @@ exports.chess_mankey = async function(req,res){
     //const url = new URL(req.headers.referer);
     //const token = url.searchParams.get("token");
     //const roomId = url.searchParams.get("room");
-  
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
     const {token,roomId,key,pace,deleteKey} = req.body; 
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
     const room = await Room.findOne({_id: new ObjectId(roomId)});
     if(room.status == 1){
         const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
