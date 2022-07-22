@@ -329,7 +329,7 @@ exports.chess_mankey = async function(req,res){
         data.token = tk;            
         const newPlay = new Play(data);
         newPlay.save(function(err,pl){
-            _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key,pace:pa});
+            _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa});
             res.status(200).send({userId:decoded.user_id,pace:pa})
         });
     }
