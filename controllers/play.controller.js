@@ -263,7 +263,8 @@ exports.chess_start = async function(req,res){
     Play.find({roomId:roomId,pace:'ready'},function(err, play){
         if(play.length == 2){
             Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},function(err, r){
-                const pace = "C0:0.0,M0:1.0,X0:2.0,S0:3.0,J0:4.0,S1:5.0,X1:6.0,M1:7.0,C1:8.0,P0:1.2,P1:7.2,Z0:0.3,Z1:2.3,Z2:4.3,Z3:6.3,Z4:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
+                //const pace = "C0:0.0,M0:1.0,X0:2.0,S0:3.0,J0:4.0,S1:5.0,X1:6.0,M1:7.0,C1:8.0,P0:1.2,P1:7.2,Z0:0.3,Z1:2.3,Z2:4.3,Z3:6.3,Z4:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
+                const pace = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
                 const timestamp = new Date();
                 var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
                 let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
@@ -303,7 +304,7 @@ exports.chess_mankey = async function(req,res){
         pa = tmp.join(",");
         
         const a = paceToObject(play.pace);
-        var delKey = deleteKey;
+        var delKey = deleteKey; 
     
         if(decoded.user_id != room.creator){
             if(key == key.toLowerCase()){
