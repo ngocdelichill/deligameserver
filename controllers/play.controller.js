@@ -435,7 +435,11 @@ exports.chess_draw_response = async function(){
     }).sort({_id:-1}).limit(1);
 }
 exports.chess_abort = function(){
-    const {token} = req.body;
+    const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-
+    Room.findOne({_id:new ObjectId(roomId)},function(err,room){
+        if(!err){
+            
+        }
+    });
 };
