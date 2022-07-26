@@ -11,7 +11,7 @@ const users = require('./routes/users.route');
 const friends = require('./routes/friends.route');
 const rooms = require('./routes/rooms.route');
 const plays = require('./routes/plays.route');
-let port = process.env.PORT || 3000;
+let port = process.env.PORT || 3003;
 //socket.io
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {

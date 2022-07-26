@@ -3,6 +3,7 @@ const Room = require('../models/room.model');
 const Joiner = require('../models/joiner.model');
 const User = require('../models/user.model');
 const Play = require('../models/play.model');
+const History = require('../models/history.model');
 const { parse } = require("dotenv");
 const { decode } = require("jsonwebtoken");
 const ObjectId = require('mongoose').Types.ObjectId; 
@@ -161,12 +162,20 @@ exports.out = async function(req,res){
         if(room.creator == decoded.user_id){
             Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
                 Joiner.remove({roomId:roomId},function(){
+                    if(room.status == '1'){
+                        History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
+                    }
                     res.send({code:2,msg:"Room master is out!"});
                     _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                 });                                
             });
         }else{
             Joiner.deleteOne({creator:decoded.user_id},function(err){
+                if(room.status == '1'){
+                    History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+                    History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
+                }
                 _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                 _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
                 res.send({code:1,msg:""});
@@ -205,4 +214,75 @@ const prevHash = function(room){
         }
         return "";
     }).sort({_id:-1}).limit(1);
+};
+
+exports.game_detail = async function(req,res){
+    const {game,token} = req.body;
+    const gameId = parseInt(game) - 1;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const win = await History.aggregate( [
+        {
+            $match: {
+                userId:decoded.user_id,
+                isWin:'1'
+            }
+        },
+        { $group: { _id: null, count: { $sum: 1 } } },
+        { $project: { _id: 0 } }
+     ] );
+     const total = await History.aggregate( [
+        {
+            $match: {
+                userId:decoded.user_id
+            }
+        },
+        {"$group" : {_id:"$userId", count:{$sum:1}}}
+        ]).limit(1); 
+    const totalPlayer = await History.aggregate( [
+        {"$group" : {_id:"$userId", count:{$sum:1}}}
+        ]).limit(1);
+
+    const gameList = [{
+        id: 1,
+        name: "Deli Chiness Chess",
+        desc: "Coming soon...",
+        alias: "deli-chinese-chess",
+        img: "/images/game-thumb/chinese-chess.jpg",
+        thumb: "/images/game-thumb/chinese-chess.jpg",
+        roomPlayerMax: 2,
+        roomBackground: "",
+        timeLimit: "3 Minutes",
+        totalPlayer: totalPlayer[0].count,
+        sort: 1,
+        winRate: parseInt(win[0].count)*100 / parseInt(total[0].count==0?1:total[0].count)
+        
+    },
+    {
+        id: 2,
+        name: "DeliFinance Monopoly",
+        desc: "",
+        alias: "deli-finance",
+        img: "/images/game-thumb/deli-finance.png",
+        thumb: "/images/game-thumb/deli-finance-thumb.jpg",
+        roomPlayerMax: 4,
+        roomBackground: "",
+        timeLimit: "3 Minutes",
+        totalPalyer: 321000,
+        sort: 2
+    },
+    {
+        id: 3,
+        name: "Deli Uno",
+        desc: "Coming soon...",
+        alias: "deli-uno",
+        img: "/images/game-thumb/deli-uno.jpg",
+        thumb: "/images/game-thumb/deli-uno.jpg",
+        roomPlayerMax: 4,
+        roomBackground: "",
+        timeLimit: "3 Minutes",
+        totalPalyer: 50000,
+        sort: 3
+    }];
+  
+    res.send(gameList[gameId]);
 };

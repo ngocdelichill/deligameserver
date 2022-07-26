@@ -14,4 +14,6 @@ router.post('/out',room.out);
 router.get('/search',room.search);
 router.patch('/update',room.update);
 
+router.post('/game-detail',room.game_detail);
+
 module.exports = router;
