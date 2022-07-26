@@ -348,8 +348,10 @@ exports.chess_mankey = async function(req,res){
                     Joiner.deleteMany({roomId:roomId},function(){
                         History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1}},function(){});
                         History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1}},function(){});
-                        res.send({code:2,msg:"The game is end"});
+                        
+                        _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa});
                         _io.emit(`room_end_${roomId}`,{userId:decoded.user_id});
+                        res.send({code:2,msg:"The game is end"});
                     });                                
                 });
             }else{
