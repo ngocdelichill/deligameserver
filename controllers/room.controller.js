@@ -217,8 +217,9 @@ const prevHash = function(room){
 };
 
 exports.game_detail = async function(req,res){
-    const {game,token} = req.body;
-    const gameId = parseInt(game) - 1;
+    const {gameAlias,token} = req.body;
+    const alias = {'deli-chinese-chess':0,'deli-finance':1,'deli-uno':2};
+    const gameId = alias[gameAlias]; 
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const win = await History.aggregate( [
         {
