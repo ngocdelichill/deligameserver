@@ -22,5 +22,6 @@ router.post('/chess_start',play.chess_start);
 router.post('/chess_mankey',play.chess_mankey);
 router.post('/chess-draw',play.chess_draw);
 router.post('/chess-resign',play.chess_resign);
+router.post('/chess-draw-response',play.chess_draw_response);
 
 module.exports = router;
