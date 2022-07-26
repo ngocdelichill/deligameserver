@@ -385,7 +385,7 @@ const paceToObject = function(pace){
 
 exports.chess_draw = async function(req,res){
     const {token,roomId} = req.body;
-    Room.findOne({_id : new ObjectId(roomId)},function(err,room){
+    Room.findOne({_id : new ObjectId(roomId)},async function(err,room){
         if(!error){
             if(room.status == '1'){
                 const decoded = jwt.verify(token, process.env.JWT_KEY);
@@ -405,7 +405,7 @@ exports.chess_draw = async function(req,res){
         }
     });    
 };
-exports.chess_draw_response = function(){
+exports.chess_draw_response = async function(){
     const {token,roomId,response} = req.body;
     Play.findOne({roomId:roomId},function(err,play){
         if(play.pace == 'draw'){
@@ -435,5 +435,5 @@ exports.chess_draw_response = function(){
 exports.chess_abort = function(){
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    
+
 };
