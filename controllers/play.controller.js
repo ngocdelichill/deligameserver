@@ -418,28 +418,46 @@ exports.chess_draw_response = async function(){
                     creator:decoded.user_id,
                     createdAt:timestamp
                 }
-                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                
             if(response == 'accept'){
                 data.pace = 'accept';
+                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                 Play.insertOne(data);
                 Room.updateOne({roomId:roomId},{$set : {status:2}});
                 _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
                 res.send({code:1,msg:"Player accept draw"});
             }else{
                 data.pace = 'reject';
-                Play.insertOne(data);
+                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                Play.insertOne(data);                
                 _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'reject'});
                 res.send({code:1,msg:"Player reject draw"});
             }
         }
     }).sort({_id:-1}).limit(1);
 }
-exports.chess_abort = function(){
+exports.chess_resign = function(){
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Room.findOne({_id:new ObjectId(roomId)},function(err,room){
         if(!err){
-            
+            if(room.status == '1'){
+                let timestamp = new Date();
+                var data = {
+                    roomId:roomId,
+                    creator:decoded.user_id,
+                    createdAt:timestamp,
+                    pace:'resign'
+                }
+                
+                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));                
+                Play.insertOne(data);
+                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}});
+                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1}});
+                Room.updateOne({roomId:roomId},{$set : {status:2}});
+                _io.emit(`room_resign_${roomId}`,{userId:decoded.user_id,response:'resign'});
+                res.send({code:1,msg:"Player resign"});
+            }
         }
     });
 };
