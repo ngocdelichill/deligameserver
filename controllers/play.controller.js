@@ -383,3 +383,57 @@ const paceToObject = function(pace){
     return pa;
 }
 
+exports.chess_draw = async function(req,res){
+    const {token,roomId} = req.body;
+    Room.findOne({_id : new ObjectId(roomId)},function(err,room){
+        if(!error){
+            if(room.status == '1'){
+                const decoded = jwt.verify(token, process.env.JWT_KEY);
+                const joiner = await Joiner.findOne({roomId:roomId,creator:{$ne:decoded.user_id}});
+                let timestamp = new Date();
+                var data = {
+                    roomId:roomId,
+                    creator:decoded.user_id,
+                    createdAt:timestamp,
+                    pace:'draw'
+                }
+                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                Play.insertOne(data);
+                _io.emit(`room_draw_${roomId}`,{userId:decoded.user_id});
+                res.send({code:1,msg:"Send request success"});
+            }            
+        }
+    });    
+};
+exports.chess_draw_response = function(){
+    const {token,roomId,response} = req.body;
+    Play.findOne({roomId:roomId},function(err,play){
+        if(play.pace == 'draw'){
+            const decoded = jwt.verify(token, process.env.JWT_KEY);
+                let timestamp = new Date();
+                var data = {
+                    roomId:roomId,
+                    creator:decoded.user_id,
+                    createdAt:timestamp
+                }
+                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+            if(response == 'accept'){
+                data.pace = 'accept';
+                Play.insertOne(data);
+                Room.updateOne({roomId:roomId},{$set : {status:2}});
+                _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
+                res.send({code:1,msg:"Player accept draw"});
+            }else{
+                data.pace = 'reject';
+                Play.insertOne(data);
+                _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'reject'});
+                res.send({code:1,msg:"Player reject draw"});
+            }
+        }
+    }).sort({_id:-1}).limit(1);
+}
+exports.chess_abort = function(){
+    const {token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
+};

@@ -255,7 +255,7 @@ exports.game_detail = async function(req,res){
         timeLimit: "3 Minutes",
         totalPlayer: totalPlayer[0].count,
         sort: 1,
-        winRate: parseInt(win[0].count)*100 / parseInt(total[0].count==0?1:total[0].count)
+        winRate: parseInt(win.length>0?win[0].count:0)*100 / parseInt(total.length>0?total[0].count:1)
         
     },
     {
