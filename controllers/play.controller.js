@@ -189,16 +189,28 @@ exports.chinesechess = async function(req, res){
             isReady:(ready == 'ready' ? true:false)
         });
     }  
-    Room.findById(roomId, function (err, room){
-        const classRoom = ['No Class','Start-up','Millionaire','Billionaire'];
-        const levelRoom = ['No Level','Silver','Glod','Diamond'];
-        User.findById(decoded.user_id, function (err, user) {   
-            room.classRoomTitle = classRoom[room.classRoom];
-            room.levelRoomTitle = levelRoom[room.level];
-            res.send({room: room,me:user,players:ul,play:play});
-        });
-    });
+    var classRoom = ['No Class','Start-up','Millionaire','Billionaire'];
+    var levelRoom = ['No Level','Silver','Glod','Diamond'];
     
+    const r = await Room.findById(roomId);            
+    var room = {
+        classRoomTitle : classRoom[r.classRoom],
+        levelRoomTitle : levelRoom[r.level],
+        _id : r._id,
+        name : r.name,
+        password : r.password != "" ? true:false,
+        creator : r.creator,
+        maxPlayers : r.maxPlayers,
+        bet : r.bet,
+        classRoom : r.classRoom,
+        level : r.level,
+        game : r.game,
+        status : r.status,
+        createdAt : r.createdAt
+    };
+    
+    const user = await User.findById(decoded.user_id);   
+    res.send({room: room,me:user,players:ul,play:play}); 
 }
 
 exports.devchinesechess = async function(req, res){

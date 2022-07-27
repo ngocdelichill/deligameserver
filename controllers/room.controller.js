@@ -18,15 +18,18 @@ exports.test = function (req, res) {
 exports.create = async function (req, res) {
     const {name, password, token,max_players,bet, class_room, level, game} = req.body;
     const gameDetail = await Game.findOne({id:game});
-    console.log(gameDetail);
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
     );
-    newRom.save(function (err,room){
-        _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game});
-        res.send(room);
+    await User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
+        delete user.password;
+        newRom.save(function (err,room){
+            _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:user});
+            res.send(room);
+        });
     });
+    
 }
 exports.update = async function (req, res){
     const {roomId,token,name,password,max_players, bet} = req.body;
