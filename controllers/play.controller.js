@@ -190,7 +190,11 @@ exports.chinesechess = async function(req, res){
         });
     }  
     Room.findById(roomId, function (err, room){
-        User.findById(decoded.user_id, function (err, user) {           
+        const classRoom = ['No Class','Start-up','Millionaire','Billionaire'];
+        const levelRoom = ['No Level','Silver','Glod','Diamond'];
+        User.findById(decoded.user_id, function (err, user) {   
+            room.classRoomTitle = classRoom[room.classRoom];
+            room.levelRoomTitle = levelRoom[room.level];
             res.send({room: room,me:user,players:ul,play:play});
         });
     });
@@ -265,18 +269,24 @@ exports.chess_start = async function(req,res){
     Play.find({roomId:roomId,pace:'ready'},function(err, play){
         if(play.length == 2){
             Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},function(err, r){
-                Joiner.find({roomId:roomId},function(err,joiner){
-                    let tmp = [];
-                    for(let x in joiner){
-                        tmp.push({
-                            roomId : roomId,
-                            userId : joiner[x].creator,
-                            game : 1,
-                            isWin : 0
-                        });
-                    }
-                    History.insertMany(tmp);
-                });
+                Room.findOne({_id: new ObjectId(roomId)},function(err, room){
+                    const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
+                    Joiner.find({roomId:roomId},function(err,joiner){
+                        let tmp = [];
+                        for(let x in joiner){
+                            tmp.push({
+                                roomId : roomId,
+                                userId : joiner[x].creator,
+                                game : 1,
+                                isWin : 0,
+                                bet : room.bet,
+                                reward : reward
+                            });
+                        }
+                        
+                        History.insertMany(tmp);
+                    }); 
+                });                
                 
                 const pace = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
                 const timestamp = new Date();
@@ -346,8 +356,10 @@ exports.chess_mankey = async function(req,res){
             if(delKey === 'j0' || delKey === 'J0'){
                 Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
                     Joiner.deleteMany({roomId:roomId},function(){
-                        History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1}},function(){});
-                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1}},function(){});
+                        const reward = parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100);
+                        History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                        
+                        
+                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1, reward:0}},function(){});
                         
                         _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa});
                         _io.emit(`room_end_${roomId}`,{userId:decoded.user_id});
@@ -418,21 +430,25 @@ exports.chess_draw_response = async function(){
                     creator:decoded.user_id,
                     createdAt:timestamp
                 }
-                
-            if(response == 'accept'){
-                data.pace = 'accept';
-                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                Play.insertOne(data);
-                Room.updateOne({roomId:roomId},{$set : {status:2}});
-                _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
-                res.send({code:1,msg:"Player accept draw"});
-            }else{
-                data.pace = 'reject';
-                data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                Play.insertOne(data);                
-                _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'reject'});
-                res.send({code:1,msg:"Player reject draw"});
-            }
+            Room.findOne({_id: new ObjectId(roomId)}, function(err, room){
+                if(response == 'accept'){
+                    data.pace = 'accept';
+                    data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                    Play.insertOne(data);
+                    Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}});
+                    const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
+                    History.updateMany({roomId:roomId},{$set : {reward : reward}});
+                    _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
+                    res.send({code:1,msg:"Player accept draw"});
+                }else{
+                    data.pace = 'reject';
+                    data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                    Play.insertOne(data);                
+                    _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'reject'});
+                    res.send({code:1,msg:"Player reject draw"});
+                }
+            });
+            
         }
     }).sort({_id:-1}).limit(1);
 }
@@ -452,9 +468,10 @@ exports.chess_resign = function(){
                 
                 data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));                
                 Play.insertOne(data);
-                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}});
-                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1}});
-                Room.updateOne({roomId:roomId},{$set : {status:2}});
+                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1, reward:0}});
+                const reward = parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100);
+                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}});
+                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}});
                 _io.emit(`room_resign_${roomId}`,{userId:decoded.user_id,response:'resign'});
                 res.send({code:1,msg:"Player resign"});
             }

@@ -6,7 +6,9 @@ const HistorySchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now},
     roomId : {type: String,required: true},
     isWin : {type: String, required: true, default: 0},
-    game : {type:Number, required: true}
+    game : {type:Number, required: true},
+    bet : {type:Number, required:true},
+    reward : {type: Number, required: true}
 });
 
 // Export the model

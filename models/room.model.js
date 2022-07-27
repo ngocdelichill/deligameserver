@@ -47,6 +47,11 @@ const RoomSchema = new mongoose.Schema({
       type: Number,
       required: true,
       default: 0
+    },
+    fee : {
+      type: Number,
+      required : true,
+      default : 0
     }
   });
 

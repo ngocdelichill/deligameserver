@@ -8,17 +8,20 @@ const { parse } = require("dotenv");
 const { decode } = require("jsonwebtoken");
 const ObjectId = require('mongoose').Types.ObjectId; 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
-
+const Game = require('../models/game.model');
 
 exports.test = function (req, res) {
+    
     res.send('Greetings from the Test controller!');
 };
 
-exports.create = function (req, res) {
+exports.create = async function (req, res) {
     const {name, password, token,max_players,bet, class_room, level, game} = req.body;
+    const gameDetail = await Game.findOne({id:game});
+    console.log(gameDetail);
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
     );
     newRom.save(function (err,room){
         _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game});
@@ -159,28 +162,32 @@ exports.out = async function(req,res){
     const {token, roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Room.findById(roomId,function(err,room){
-        if(room.creator == decoded.user_id){
-            Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
-                Joiner.remove({roomId:roomId},function(){
+        if(!err){
+            if(room.creator == decoded.user_id){
+                Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
+                    Joiner.remove({roomId:roomId},function(){
+                        if(room.status == '1'){
+                            History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+                            History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
+                        }
+                        res.send({code:2,msg:"Room master is out!"});
+                        _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
+                    });                                
+                });
+            }else{
+                Joiner.deleteOne({creator:decoded.user_id},function(err){
                     if(room.status == '1'){
                         History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
                         History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
                     }
-                    res.send({code:2,msg:"Room master is out!"});
                     _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
-                });                                
-            });
-        }else{
-            Joiner.deleteOne({creator:decoded.user_id},function(err){
-                if(room.status == '1'){
-                    History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
-                    History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
-                }
-                _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
-                _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
-                res.send({code:1,msg:""});
-            });
+                    _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
+                    res.send({code:1,msg:""});
+                });
+            }
         }
+        
+
     });
     
 }
@@ -218,8 +225,6 @@ const prevHash = function(room){
 
 exports.game_detail = async function(req,res){
     const {gameAlias,token} = req.body;
-    const alias = {'deli-chinese-chess':0,'deli-finance':1,'deli-uno':2};
-    const gameId = alias[gameAlias]; 
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const win = await History.aggregate( [
         {
@@ -242,48 +247,9 @@ exports.game_detail = async function(req,res){
     const totalPlayer = await History.aggregate( [
         {"$group" : {_id:"$userId", count:{$sum:1}}}
         ]).limit(1);
-
-    const gameList = [{
-        id: 1,
-        name: "Deli Chiness Chess",
-        desc: "Coming soon...",
-        alias: "deli-chinese-chess",
-        img: "/images/game-thumb/chinese-chess.jpg",
-        thumb: "/images/game-thumb/chinese-chess.jpg",
-        roomPlayerMax: 2,
-        roomBackground: "",
-        timeLimit: "3 Minutes",
-        totalPlayer: totalPlayer[0].count,
-        sort: 1,
-        winRate: parseInt(win.length>0?win[0].count:0)*100 / parseInt(total.length>0?total[0].count:1)
-        
-    },
-    {
-        id: 2,
-        name: "DeliFinance Monopoly",
-        desc: "",
-        alias: "deli-finance",
-        img: "/images/game-thumb/deli-finance.png",
-        thumb: "/images/game-thumb/deli-finance-thumb.jpg",
-        roomPlayerMax: 4,
-        roomBackground: "",
-        timeLimit: "3 Minutes",
-        totalPalyer: 321000,
-        sort: 2
-    },
-    {
-        id: 3,
-        name: "Deli Uno",
-        desc: "Coming soon...",
-        alias: "deli-uno",
-        img: "/images/game-thumb/deli-uno.jpg",
-        thumb: "/images/game-thumb/deli-uno.jpg",
-        roomPlayerMax: 4,
-        roomBackground: "",
-        timeLimit: "3 Minutes",
-        totalPalyer: 50000,
-        sort: 3
-    }];
-  
-    res.send(gameList[gameId]);
+    const game = await Game.findOne({alias:gameAlias});
+    game.totalPlayer = totalPlayer[0].count;
+    game.winRate = parseInt(win.length>0?win[0].count:0)*100 / parseInt(total.length>0?total[0].count:1)
+    res.send(game);
+    
 };
