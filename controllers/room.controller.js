@@ -22,7 +22,7 @@ exports.create = async function (req, res) {
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
     );
-    await User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
+    User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
         delete user.password;
         newRom.save(function (err,room){
             _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:user});
