@@ -40,7 +40,7 @@ app.use('/users', users);
 app.use('/friends',friends);
 app.use('/rooms',rooms);
 app.use('/plays',plays);
-
+app.use('/histories',history);
 
 const dbConfig = 'mongodb+srv://hankite:62424436@cluster0.gayzc.mongodb.net/?retryWrites=true&w=majority';
 const mongoose = require('mongoose');

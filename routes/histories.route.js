@@ -7,5 +7,6 @@ const history = require('../controllers/history.controller');
 
 // a simple test url to check that all of our files are communicating correctly.
 router.get('/test', history.test);
+router.post('/game-history',history.game);
 
 module.exports = router;

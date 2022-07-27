@@ -172,9 +172,10 @@ exports.out = async function(req,res){
                         if(room.status == '1'){
                             History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
                             History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
-                        }
-                        res.send({code:2,msg:"Room master is out!"});
+                        }                       
                         _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
+                        _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
+                        res.send({code:2,msg:"Room master is out!"});
                     });                                
                 });
             }else{
