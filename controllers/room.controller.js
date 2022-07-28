@@ -271,8 +271,6 @@ exports.game_detail = async function(req,res){
     };
     game.totalPlayer = totalPlayer[0].total;
     game.winRate = parseInt(win[0].total==null?0:win[0].total)*100 / (total[0].total==null?1:total[0].total)
-
-    console.log(totalPlayer[0].total,win[0].total,total[0].total);
     res.send(game);
     
 };

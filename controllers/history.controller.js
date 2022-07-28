@@ -10,7 +10,7 @@ exports.game = async function (req, res){
     let limit = isNaN(req.query._limit) ? 10:parseInt(req.query._limit);
     let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
     let skip = page * limit - limit;
-    if(token == ''){
+    if(token != ''){
         const decoded = jwt.verify(token, process.env.JWT_KEY);
         const game = await Game.find({});
         var gameList = {};

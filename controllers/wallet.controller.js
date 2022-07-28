@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { find } = require("../models/wallet.model");
 const Wallet = require('../models/wallet.model');
-
+const Transaction = require('../models/transaction.model');
 
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
@@ -37,3 +37,30 @@ exports.remove = (req, res) => {
     });
 }
 
+exports.detail = (req, res) => {
+    const {token,address} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Wallet.findOne({creator:decoded.user_id,address},(err,w)=>{
+        if(w != null && !err)
+            res.send(w);
+        else
+            res.send({code:0,msg:"Wallet not found"});
+    });
+}
+
+exports.all = (req, res) => {
+    const {token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Wallet.find({creator:decoded.user_id},(err,w)=>{
+        if(w != null && !err)
+            res.send(w);
+        else
+            res.send({code:0,msg:"Wallet not found"});
+    });
+}
+
+exports.transaction_add = (req, res) => {
+    const {token,address,amount} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    
+}
