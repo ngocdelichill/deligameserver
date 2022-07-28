@@ -237,8 +237,8 @@ exports.game_detail = async function(req,res){
                 isWin:'1'
             }
         },
-        { $group: { _id: null, count: { $sum: 1 } } },
-        { $project: { _id: 0 } }
+        { $group: { _id: null} },
+        {$count: "total"}
      ] );
      const total = await History.aggregate( [
         {
@@ -246,14 +246,33 @@ exports.game_detail = async function(req,res){
                 userId:decoded.user_id
             }
         },
-        {"$group" : {_id:"$userId", count:{$sum:1}}}
-        ]).limit(1); 
+        {"$group" : {_id:"$userId"}},
+        {"$count" : "total"}
+        ]); 
     const totalPlayer = await History.aggregate( [
-        {"$group" : {_id:"$userId", count:{$sum:1}}}
-        ]).limit(1);
-    const game = await Game.findOne({alias:gameAlias});
-    game.totalPlayer = totalPlayer[0].count;
-    game.winRate = parseInt(win.length>0?win[0].count:0)*100 / parseInt(total.length>0?total[0].count:1)
+        {"$group" : {_id:"$userId"}},
+        {"$count" : "total"}
+        ]);
+   
+    const g = await Game.findOne({alias:gameAlias});
+    let game = {
+        _id:g._id,
+        id:g.id,
+        name:g.name,
+        desc:g.desc,
+        alias:g.alias,
+        img:g.img,
+        thumb:g.thumb,
+        roomPlayerMax:g.roomPlayerMax,
+        roomBackground:g.roomBackground,
+        timeLimit:g.timeLimit,
+        sort:g.sort,
+        fee:g.fee
+    };
+    game.totalPlayer = totalPlayer[0].total;
+    game.winRate = parseInt(win[0].total==null?0:win[0].total)*100 / (total[0].total==null?1:total[0].total)
+
+    console.log(totalPlayer[0].total,win[0].total,total[0].total);
     res.send(game);
     
 };

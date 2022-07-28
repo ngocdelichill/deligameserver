@@ -12,6 +12,7 @@ const friends = require('./routes/friends.route');
 const rooms = require('./routes/rooms.route');
 const plays = require('./routes/plays.route');
 const history = require('./routes/histories.route');
+const wallet = require('./routes/wallets.route');
 let port = process.env.PORT || 3003;
 //socket.io
 const http = require('http').Server(app);
@@ -41,6 +42,7 @@ app.use('/friends',friends);
 app.use('/rooms',rooms);
 app.use('/plays',plays);
 app.use('/histories',history);
+app.use('/wallets',wallet);
 
 const dbConfig = 'mongodb+srv://hankite:62424436@cluster0.gayzc.mongodb.net/?retryWrites=true&w=majority';
 const mongoose = require('mongoose');
