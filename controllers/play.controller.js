@@ -412,7 +412,7 @@ const paceToObject = function(pace){
 exports.chess_draw = async function(req,res){
     const {token,roomId} = req.body;
     Room.findOne({_id : new ObjectId(roomId)},async function(err,room){
-        if(!error){
+        if(room != null){
             if(room.status == '1'){
                 const decoded = jwt.verify(token, process.env.JWT_KEY);
                 const joiner = await Joiner.findOne({roomId:roomId,creator:{$ne:decoded.user_id}});
@@ -427,7 +427,11 @@ exports.chess_draw = async function(req,res){
                 Play.create(data);
                 _io.emit(`room_draw_${roomId}`,{userId:decoded.user_id});
                 res.send({code:1,msg:"Send request success"});
-            }            
+            }else{
+                res.send({code:0,msg:"The game was end"});
+            }           
+        }else{
+            res.send({code:0,msg:"Room not found"});
         }
     });    
 };

@@ -88,7 +88,7 @@ exports.transaction_check = (req, res) => {
                     const trans = JSON.parse(body);
                     const tr = trans.result;
                     let data = {};
-                    if(tr.length > 2){
+                    if(tr.length > 1){
                         let total = 0;
                         for(let x in tr){                    
                             if(tr[x].to == process.env.WALLET_TO && parseInt(tr[x].blockNumber) > parseInt(b.blockNumber) ){                        
@@ -105,7 +105,7 @@ exports.transaction_check = (req, res) => {
                         }
                         Transaction.updateOne({_id:new ObjectId(t._id)},{$set : data},()=>{});
                     }
-                    res.send(data);
+                    res.send(body);
                 });
             }).sort({blockNumber:-1});            
         }else{
