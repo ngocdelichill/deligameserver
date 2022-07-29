@@ -452,8 +452,8 @@ exports.chess_draw_response = async function(){
                     data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                     Play.create(data);
                     Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}});
-                    //const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
-                    //History.updateMany({roomId:roomId},{$set : {reward : reward}});
+                    const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
+                    History.updateMany({roomId:roomId},{$set : {reward : reward}});
                     _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
                     res.send({code:1,msg:"Player accept draw"});
                 }else{
