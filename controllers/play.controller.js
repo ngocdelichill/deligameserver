@@ -451,9 +451,9 @@ exports.chess_draw_response = async function(req, res){
                     data.pace = 'accept';
                     data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                     Play.create(data);
-                    Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}});
+                    Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{});
                     const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
-                    History.updateMany({roomId:roomId},{$set : {reward : reward}});
+                    History.updateMany({roomId:roomId},{$set : {reward : reward}},()=>{});
                     _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
                     res.send({code:1,msg:"Player accept draw"});
                 }else{
@@ -486,8 +486,8 @@ exports.chess_resign = function(req, res){
                 Play.create(data);
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}});
                 const reward = (parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100) + parseFloat(room.bet));
-                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}});
-                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}});
+                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
+                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{});
                 _io.emit(`room_resign_${roomId}`,{userId:decoded.user_id,response:'resign'});
                 res.send({code:1,msg:"Player resign"});
             }
