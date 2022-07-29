@@ -271,7 +271,8 @@ exports.game_detail = async function(req,res){
         sort:g.sort,
         fee:g.fee
     };
-    game.totalPlayer = totalPlayer == null ? 0:totalPlayer[0].total;
+    console.log(totalPlayer);
+    game.totalPlayer = totalPlayer.length > 0 ? 0:totalPlayer[0].total;
     game.winRate = parseInt(win[0].total==null?0:win[0].total)*100 / (total[0].total==null?1:total[0].total)
     res.send(game);
     
