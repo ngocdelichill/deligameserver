@@ -239,8 +239,7 @@ exports.game_detail = async function(req,res){
                 isWin:'1'
             }
         },
-        { $group: { _id: null} },
-        {$count: "total"}
+        { $group: { _id: null,total:{$sum:1}} }
      ] );
      const total = await History.aggregate( [
         {
@@ -248,12 +247,10 @@ exports.game_detail = async function(req,res){
                 userId:decoded.user_id
             }
         },
-        {"$group" : {_id:"$userId"}},
-        {"$count" : "total"}
+        {"$group" : {_id:"$userId",total:{$sum:1}}}
         ]); 
     const totalPlayer = await History.aggregate( [
-        {"$group" : {_id:"$userId"}},
-        {"$count" : "total"}
+        {"$group" : {_id:"$userId",total:{$sum:1}}}
         ]);
    
     const g = await Game.findOne({alias:gameAlias});

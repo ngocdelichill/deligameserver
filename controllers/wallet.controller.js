@@ -125,7 +125,10 @@ exports.transaction_check = (req, res) => {
 }
 
 const updateBalance = (userId) => {
-    Transaction.a
+    Transaction.aggregate([
+        {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}
+            
+        ]);
 }
 
 const prevHash = function(room){
