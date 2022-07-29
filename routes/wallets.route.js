@@ -12,4 +12,5 @@ router.post('/detail',jsonParser, wallet.detail);
 router.post('/all',jsonParser, wallet.all);
 
 router.post('/add-transaction',jsonParser, wallet.transaction_add);
+router.post('/check-transaction',jsonParser, wallet.transaction_check);
 module.exports = router;

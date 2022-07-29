@@ -19,7 +19,7 @@ exports.game = async function (req, res){
         }
         const win = {"-1":"Lost","0":"Draw","1":"Win"};
         var his = [];
-        const h = await History.find({userId:decoded.user_id}).skip(skip).limit(limit);
+        const h = await History.find({userId:decoded.user_id}).sort({_id:-1}).skip(skip).limit(limit);
         for(x in h){
             his.push({
                 gameTitle : gameList[h[x].game],

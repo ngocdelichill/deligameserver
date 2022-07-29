@@ -87,7 +87,7 @@ exports.list = async function (req, res) {
         {
             $match: {
                 $or:[{name:{'$regex': keyword,$options:'i'}}, {"roomId":{'$regex':keyword, $options: 'i'}},], 
-                $and: [{classRoom : classRoom}, {level: level}, {game: game}]
+                $and: [{classRoom : classRoom}, {level: level}, {game: game}, {status:0}]
             }
         },
         { $group: { _id: null, _count: { $sum: 1 } } },
@@ -171,7 +171,8 @@ exports.out = async function(req,res){
                     Joiner.remove({roomId:roomId},function(){
                         if(room.status == '1'){
                             History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
-                            History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
+                            const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
+                            History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1,reward:reward}},function(){});
                         }                       
                         _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                         _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
@@ -182,7 +183,8 @@ exports.out = async function(req,res){
                 Joiner.deleteOne({creator:decoded.user_id},function(err){
                     if(room.status == '1'){
                         History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
-                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1}},function(){});
+                        const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
+                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1,reward:reward}},function(){});
                     }
                     _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                     _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
