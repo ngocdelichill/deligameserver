@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, unique: true },
     password: { type: String },
     token: { type: String },
+    balance: {type: Number, required: false}
   });
 
 // Export the model

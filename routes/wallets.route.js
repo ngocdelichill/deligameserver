@@ -11,7 +11,7 @@ router.post('/remove',jsonParser, wallet.remove);
 router.post('/detail',jsonParser, wallet.detail);
 router.post('/all',jsonParser, wallet.all);
 
-router.get('/')
+router.get('/debug', wallet.debug);
 router.post('/add-transaction',jsonParser, wallet.transaction_add);
 router.post('/check-transaction',jsonParser, wallet.transaction_check);
 module.exports = router;

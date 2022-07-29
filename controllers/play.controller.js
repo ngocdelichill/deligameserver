@@ -435,7 +435,7 @@ exports.chess_draw = async function(req,res){
         }
     });    
 };
-exports.chess_draw_response = async function(){
+exports.chess_draw_response = async function(req, res){
     const {token,roomId,response} = req.body;
     Play.findOne({roomId:roomId},function(err,play){
         if(play.pace == 'draw'){
@@ -468,7 +468,7 @@ exports.chess_draw_response = async function(){
         }
     }).sort({_id:-1}).limit(1);
 }
-exports.chess_resign = function(){
+exports.chess_resign = function(req, res){
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Room.findOne({_id:new ObjectId(roomId)},function(err,room){
