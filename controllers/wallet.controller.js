@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { find } = require("../models/wallet.model");
 const Wallet = require('../models/wallet.model');
+const User = require('../models/user.model');
 const Transaction = require('../models/transaction.model');
 const { decode } = require("jsonwebtoken");
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
@@ -109,7 +110,9 @@ exports.transaction_check = (req, res) => {
                                 };
                             }
                         }
+
                         Transaction.updateOne({_id:new ObjectId(t._id)},{$set : data},()=>{});
+                        
                     }
                     res.send(body);
                 });
@@ -119,6 +122,10 @@ exports.transaction_check = (req, res) => {
         }        
     }).sort({_id:-1}).limit(1);
     
+}
+
+const updateBalance = (userId) => {
+    Transaction.a
 }
 
 const prevHash = function(room){
