@@ -13,7 +13,7 @@ router.post('/forgot_password',jsonParser, user.forgot_password);
 router.get('/recovery_password',user.recovery_password);
 router.put('/update_password', user.update_password);
 router.put('/change_password', jsonParser,user.change_password);
-router.get('/:id', user.details);
+router.post('/detail', user.details);
 router.put('/update', user.update);
 router.delete('/:id/delete', user.delete);
 module.exports = router;

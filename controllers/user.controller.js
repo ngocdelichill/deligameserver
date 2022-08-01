@@ -151,9 +151,12 @@ exports.update_password = async function (req, res) {
     });
 };
 exports.details = function (req, res) {
-    User.findById(req.params.id, function (err, user) {
+    const {token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    User.findById(decoded.user_id, function (err, user) {
         if (err) 
             console.log(err);
+        delete user.password;
         res.send(user);
     })
 };

@@ -92,8 +92,8 @@ exports.transaction_check = (req, res) => {
     Transaction.findOne({address:address,creator:decoded.user_id,createdAt : {$gt : new Date(Date.now() - 15*60*1000)}},(err,t)=>{
         if(t!=null){
             Transaction.findOne({},(err,b)=>{
-                //const api_url = `https://api.bscscan.com/api?module=account&action=tokentx&contractaddress=${process.env.WALLET_CONTRACT_ADDRESS}&address=${t.fromAddress}&page=1&offset=5&startblock=${b.blockNumber}&endblock=999999999&sort=desc&apikey=${process.env.BSCSCAN_KEY}`;
-                const api_url = `http://localhost:3003/wallets/debug?module=account&action=tokentx&contractaddress=${process.env.WALLET_CONTRACT_ADDRESS}&address=${t.fromAddress}&page=1&offset=5&startblock=${b.blockNumber}&endblock=999999999&sort=desc&apikey=${process.env.BSCSCAN_KEY}`;
+                const api_url = `https://api.bscscan.com/api?module=account&action=tokentx&contractaddress=${process.env.WALLET_CONTRACT_ADDRESS}&address=${t.fromAddress}&page=1&offset=5&startblock=${b.blockNumber}&endblock=999999999&sort=desc&apikey=${process.env.BSCSCAN_KEY}`;
+                //const api_url = `http://localhost:3003/wallets/debug?module=account&action=tokentx&contractaddress=${process.env.WALLET_CONTRACT_ADDRESS}&address=${t.fromAddress}&page=1&offset=5&startblock=${b.blockNumber}&endblock=999999999&sort=desc&apikey=${process.env.BSCSCAN_KEY}`;
                 request(api_url,(err, response, body)=>{
                     const trans = JSON.parse(body);
                     const tr = trans.result;
