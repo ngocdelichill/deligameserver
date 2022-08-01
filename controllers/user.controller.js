@@ -3,7 +3,9 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require('nodemailer');
 const User = require('../models/user.model');
 var aes256 = require('aes256');
+const { isObjectIdOrHexString } = require("mongoose");
 var key = '11112222';
+const ObjectId = require('mongoose').Types.ObjectId; 
 //Simple version, without validation or sanitation
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
@@ -161,21 +163,21 @@ exports.details = function (req, res) {
     })
 };
 exports.update = async function (req, res) {
-    const {name, phone, email, password} = req.body;
-    const user = await User.findOne({email});
+    const {token, name, phone, password} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    const user = await User.findById(decoded.user_id);
     if (user && (await bcrypt.compare(password, user.password))) {
         User.updateOne({
-            email: email
+            _id: new ObjectId(decoded.user_id)
         }, {
             $set: {
                 name: name,
-                phone: phone,
-                email: email
+                phone: phone
             }
         }, function (err, user) {
             if (err) 
                 console.log(err);
-            res.send('user udpated.');
+            res.send({code:1,msg:"Updated success"});
         });
     }else{
         res.send({code:0,msg:"Password is wrong"});
@@ -189,7 +191,7 @@ exports.change_password = async function(req,res){
     encryptedPassword = await bcrypt.hash(password, 10);
     if (user && (await bcrypt.compare(passwordOld, user.password))) {
         User.updateOne({
-            email: user.email
+            _id: new ObjectId(decoded.user_id)
         }, {
             $set: {
                 password:encryptedPassword
@@ -197,7 +199,7 @@ exports.change_password = async function(req,res){
         }, function (err, user) {
             if (err) 
                 console.log(err);
-            res.send('user udpated.');
+            res.send({code:1,msg:"Change password success"});
         });
     }else{
         res.send({code:0,msg:"Password old is wrong"});
