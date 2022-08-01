@@ -29,11 +29,11 @@ exports.create = async function (req, res) {
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
     );
-    User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
+    User.findOne({_id: new ObjectId(decoded.user_id)},function(err, user){
         delete user.password;
         if(parseFloat(user.balance) >= parseFloat(bet)){
             newRom.save(function (err,room){
-                _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:user});
+                _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:[user]});
                 res.send(room);
             });
         }else{
@@ -46,7 +46,7 @@ exports.create = async function (req, res) {
 exports.update = async function (req, res){
     const {roomId,token,name,password,max_players, bet} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    User.find({_id: new ObjectId(decoded.user_id)},async function(err, user){
+    User.findOne({_id: new ObjectId(decoded.user_id)},async function(err, user){
         if(parseFloat(user.balance) >= parseFloat(bet)){
             const room = await Room.updateOne({creator:decoded.user_id,_id : new ObjectId(roomId)},{$set : {
                 name:name,
