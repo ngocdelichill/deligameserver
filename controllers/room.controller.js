@@ -10,10 +10,17 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 const Game = require('../models/game.model');
 
-exports.test = function (req, res) {
-    
+exports.test = async function (req, res) {
+
     res.send('Greetings from the Test controller!');
 };
+
+const checkBalance = async function(userId,bet){
+    const u = await User.findById(userId);
+    if(parseFloat(u.balance) > bet)
+        return true;
+    return false;
+}
 
 exports.create = async function (req, res) {
     const {name, password, token,max_players,bet, class_room, level, game} = req.body;
@@ -24,27 +31,34 @@ exports.create = async function (req, res) {
     );
     User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
         delete user.password;
-        newRom.save(function (err,room){
-            _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:user});
-            res.send(room);
-        });
+        if(parseFloat(user.balance) >= parseFloat(bet)){
+            newRom.save(function (err,room){
+                _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:user});
+                res.send(room);
+            });
+        }else{
+            res.send({code:0,msg:"DLC not enough"});
+        }
+        
     });
     
 }
 exports.update = async function (req, res){
     const {roomId,token,name,password,max_players, bet} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    
-    const room = await Room.updateOne({creator:decoded.user_id,_id : new ObjectId(roomId)},{$set : {
-        name:name,
-        password:password,
-        maxPlayers:max_players,
-        bet:bet
-    }, function(err, room){
-        
-    }});
-
-    res.send(room);
+    User.find({_id: new ObjectId(decoded.user_id)},async function(err, user){
+        if(parseFloat(user.balance) >= parseFloat(bet)){
+            const room = await Room.updateOne({creator:decoded.user_id,_id : new ObjectId(roomId)},{$set : {
+                name:name,
+                password:password,
+                maxPlayers:max_players,
+                bet:bet
+            }, function(err, room){}});
+            res.send(room);
+        }else{
+            res.send({code:0,msg:"DLC not enough"});
+        }
+    });    
 }
 exports.list = async function (req, res) {
     let limit = isNaN(req.query._limit) ? 20:parseInt(req.query._limit);
@@ -131,28 +145,34 @@ exports.join = function (req, res) {
         _io.emit(`room_remove`,decoded.user_id);
         Room.findById(req.body.roomId,function(err,room){           
             if(room != null && room != undefined && room != {} ){
-                if(room.password == password){
-                    let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
-                    newJoin.save().then(function(join){
-                        User.findById(decoded.user_id,function(err,user){
-                            if(room.creator == decoded.user_id){
-                                const timestamp = new Date();
-                                 var data = {roomId:roomId,pace:'ready',creator:decoded.user_id,createdAt:timestamp};
-                               
-                                 let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                                 data.token = tk;
-                               
-                                 const newPlay = new Play(data);
-                                 newPlay.save();   
-                            }
-                            _io.emit(`room_join_${roomId}`,user);
-                            _io.emit(`room_refesh`,{roomId:roomId,player:user});
-                        });            
-                        res.send(join);
-                    });
-                }else{
-                    res.send({code:0,msg:"Password is incorrect"});
-                }    
+                User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
+                    if(room.password == password){
+                        if(parseFloat(user.balance) > parseFloat(room.bet)){
+                        let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
+                        newJoin.save().then(function(join){
+                            User.findById(decoded.user_id,function(err,user){
+                                if(room.creator == decoded.user_id){
+                                    const timestamp = new Date();
+                                    var data = {roomId:roomId,pace:'ready',creator:decoded.user_id,createdAt:timestamp};
+                                
+                                    let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                                    data.token = tk;
+                                
+                                    const newPlay = new Play(data);
+                                    newPlay.save();   
+                                }
+                                _io.emit(`room_join_${roomId}`,user);
+                                _io.emit(`room_refesh`,{roomId:roomId,player:user});
+                            });            
+                            res.send(join);
+                        });
+                    }else{
+                        res.send({code:0,msg:"DLC not enough"});
+                    }
+                    }else{
+                        res.send({code:0,msg:"Password is incorrect"});
+                    } 
+                });
             }else{
                 res.send({code:-1,msg:"Room not found"});
             }
@@ -180,18 +200,20 @@ exports.out = async function(req,res){
                     });                                
                 });
             }else{
-                Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
+                
                     Joiner.deleteOne({creator:decoded.user_id},function(err){
                         if(room.status == '1'){
-                            History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
-                            const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
-                            History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1,reward:reward}},function(){});
+                            Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
+                                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+                                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
+                                History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1,reward:reward}},function(){});
+                            });
                         }
                         _io.emit(`room_out_${roomId}`,{userId:decoded.user_id});
                         _io.emit(`room_out`,{roomId:roomId,userId:decoded.user_id});
                         res.send({code:1,msg:""});
                     });
-                });
+               
             }
         }
         

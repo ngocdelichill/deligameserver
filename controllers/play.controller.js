@@ -484,7 +484,7 @@ exports.chess_resign = function(req, res){
                 
                 data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));                
                 Play.create(data);
-                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}});
+                History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
                 const reward = (parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100) + parseFloat(room.bet));
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{});
