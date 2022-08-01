@@ -145,7 +145,7 @@ exports.join = function (req, res) {
         _io.emit(`room_remove`,decoded.user_id);
         Room.findById(req.body.roomId,function(err,room){           
             if(room != null && room != undefined && room != {} ){
-                User.find({_id: new ObjectId(decoded.user_id)},function(err, user){
+                User.findOne({_id: new ObjectId(decoded.user_id)},function(err, user){
                     if(room.password == password){
                         if(parseFloat(user.balance) > parseFloat(room.bet)){
                         let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
