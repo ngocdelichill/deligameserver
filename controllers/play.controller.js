@@ -188,7 +188,8 @@ exports.chinesechess = async function(req, res){
         ul.push({
             _id:player._id,
             name:player.name,
-            isReady:(ready == 'ready' ? true:false)
+            isReady:(ready == 'ready' ? true:false),
+            avatar: player.avatar
         });
     }  
     var classRoom = ['No Class','Start-up','Millionaire','Billionaire'];

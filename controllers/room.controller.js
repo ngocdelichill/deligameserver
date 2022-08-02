@@ -119,7 +119,8 @@ exports.list = async function (req, res) {
                     "_id" : z[v]._id,
                     "name" : z[v].name,
                     "phone" : z[v].phone,
-                    "email" : z[v].email                    
+                    "email" : z[v].email,
+                    "avatar" : z[v].avatar                    
                 });
             }
             
