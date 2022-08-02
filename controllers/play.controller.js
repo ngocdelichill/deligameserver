@@ -497,3 +497,21 @@ exports.chess_resign = function(req, res){
         }
     });
 };
+
+exports.check_match() = function(req, res){
+    const {token} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Joiner.findOne({creator:decoded.user_id},(err, join)=>{
+        if(join != null){
+            Room.findOne({_id:new ObjectId(join.roomId)},(err, room)=>{
+                if(room.status == '1'){
+                    res.send({code:1,roomId:room._id});
+                }else{
+                    res.send({code:0,msg:""});
+                }
+            });
+        }else{
+            res.send({code:0,msg:""});
+        }
+    })
+}
