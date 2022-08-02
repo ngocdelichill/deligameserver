@@ -225,7 +225,7 @@ exports.upload_avatar = async (req, res) => {
     const avatar = req.file != undefined ? req.file.location:"";
     if(avatar != ""){
         User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:avatar}},()=>{});    
-        res.send({code:1,msg:"Upload Success"});
+        res.send({code:1,msg:"Upload Success",file:req.file});
     }else{
         res.send({code:0,msg:"File not found"});
     }

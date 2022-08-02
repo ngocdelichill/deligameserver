@@ -16,15 +16,17 @@ var s3 = new aws.S3({
 
 var upload = multer({
     storage: multerS3({
-        s3: s3,
-        acl: 'public-read',
+        s3: s3,        
         bucket:process.env.AWS_BUCKET+"/avatar",
+        acl: 'public-read',
         metadata: function (req, file, cb) {      
             cb(null, { fieldName: file.fieldname });
         },
         key: function (req, file, cb) {
             const fileSize = parseInt(req.headers["content-length"])
+            
             if ((file.mimetype === "image/png" || file.mimetype === "image/jpg" || file.mimetype === "image/jpeg" || file.mimetype === "application/octet-stream") && fileSize <= 1048576) {
+               
                 const {token} = req.query;
                     const decoded = jwt.verify(token, process.env.JWT_KEY);
                     file.name = decoded.user_id+"_"+file.originalname;
