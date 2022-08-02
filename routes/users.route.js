@@ -11,12 +11,13 @@ var s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY,
     secretAccessKey: process.env.AWS_SECRET_KEY,
     region: process.env.AWS_REGION,
-    signatureVersion: 'v4',
+    signatureVersion: 'v4'
  });
 
 var upload = multer({
     storage: multerS3({
         s3: s3,
+        acl: 'public-read',
         bucket:process.env.AWS_BUCKET+"/avatar",
         metadata: function (req, file, cb) {      
             cb(null, { fieldName: file.fieldname });

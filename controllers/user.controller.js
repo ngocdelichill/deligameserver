@@ -221,7 +221,7 @@ exports.delete = function (req, res) {
 exports.upload_avatar = async (req, res) => {
     const {token} = req.query;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    console.log(req.file);
+    
     const avatar = req.file != undefined ? req.file.location:"";
     if(avatar != ""){
         User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:avatar}},()=>{});    
