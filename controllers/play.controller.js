@@ -498,7 +498,7 @@ exports.chess_resign = function(req, res){
     });
 };
 
-exports.check_match() = function(req, res){
+exports.check_match = function(req, res){
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Joiner.findOne({creator:decoded.user_id},(err, join)=>{
