@@ -221,6 +221,20 @@ exports.delete = function (req, res) {
 exports.upload_avatar = async (req, res) => {
     const {token} = req.query;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:req.file.location}},()=>{});    
-    res.send({code:1,msg:"Upload Success"});
+    console.log(req.file);
+    const avatar = req.file != undefined ? req.file.location:"";
+    if(avatar != ""){
+        User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:avatar}},()=>{});    
+        res.send({code:1,msg:"Upload Success"});
+    }else{
+        res.send({code:0,msg:"File not found"});
+    }
+    
 };
+
+exports.update_avatar = (req, res)=> {
+    const {token,avatar} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:avatar}},()=>{});    
+    res.send({code:1,msg:"Update Success"});
+}

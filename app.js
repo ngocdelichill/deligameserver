@@ -60,4 +60,4 @@ mongoose.connect(dbConfig, {
 global._io.on('connection', SocketServices.connection)
 http.listen(port, () => {
     console.log(`Socket.IO server running at port: ${port}`);
-  });
+});

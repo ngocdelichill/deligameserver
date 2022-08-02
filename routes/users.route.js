@@ -57,4 +57,6 @@ router.post('/upload-avatar',function(req,res){
         }
     })
 });
+
+router.post('/update-avatar', user.update_avatar);
 module.exports = router;
