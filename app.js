@@ -4,6 +4,7 @@ require("dotenv").config();
 var cors = require('cors');
 var path = require('path');
 const app = express();
+
 app.set('view engine', 'ejs');
 const auth = require("./auth/auth");
 const bodyParser = require('body-parser');
@@ -19,7 +20,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     cors: {
         //origin: `http://localhost:${port}`,
-        origin: [`http://localhost:3000`,`https://deligamesdemo.vercel.app`,`https://deligames.vercel.app`],
+        origin: [`http://127.0.0.1:5500`,`http://localhost:3000`,`https://deligamesdemo.vercel.app`,`https://deligames.vercel.app`],
         methods: ["GET", "POST"],
         transports: ['websocket', 'polling'],
         credentials: true

@@ -4,9 +4,11 @@ const nodemailer = require('nodemailer');
 const User = require('../models/user.model');
 var aes256 = require('aes256');
 const { isObjectIdOrHexString } = require("mongoose");
+const { decode } = require("jsonwebtoken");
 var key = '11112222';
 const ObjectId = require('mongoose').Types.ObjectId; 
-//Simple version, without validation or sanitation
+
+
 exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
@@ -207,9 +209,18 @@ exports.change_password = async function(req,res){
 };
 
 exports.delete = function (req, res) {
+    /*
     User.findByIdAndRemove(req.params.id, function (err) {
         if (err) 
             console.log(err);
         res.send('Deleted successfully!');
     })
+    */
+};
+
+exports.upload_avatar = async (req, res) => {
+    const {token} = req.query;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    User.updateOne({_id:new ObjectId(decoded.user_id)}, {$set : {avatar:req.file.location}},()=>{});    
+    res.send({code:1,msg:"Upload Success"});
 };
