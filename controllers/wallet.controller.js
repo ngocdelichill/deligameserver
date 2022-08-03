@@ -143,18 +143,14 @@ const updateBalance = async (userId) => {
              ],(err,h)=>{
                  
              });
-    b = await History.aggregate([
-             {$match : {userId:userId}},
-             {"$group" : {_id:"$userId", _sum : {$sum: "$bet"}}}
-             ],(err,h)=>{
-                 
-             });
+    
      const his = (h[0] == undefined ? 0:h[0]._sum);
-     const bet = (b[0] == undefined ? 0:b[0]._sum);
      
-     const balance = trans + his - bet;
+     const balance = trans + his;
      User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
          _io.emit(`update_balance_${userId}`,balance);
+         
+         return balance;
      });
  }
 

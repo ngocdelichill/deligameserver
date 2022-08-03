@@ -14,8 +14,9 @@ const jwt = require("jsonwebtoken");
 const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join } = require('path');
-exports.test = function (req, res) {
-    res.send('Greetings from the Test controller!');
+exports.test = async function (req, res) {
+    let result = await updateBalance(req.query.id);
+    res.send('Greetings from the Test controller! balance: '+result);
 };
 
 const updateBalance = async (userId) => {
@@ -34,18 +35,14 @@ const updateBalance = async (userId) => {
              ],(err,h)=>{
                  
              });
-    b = await History.aggregate([
-             {$match : {userId:userId}},
-             {"$group" : {_id:"$userId", _sum : {$sum: "$bet"}}}
-             ],(err,h)=>{
-                 
-             });
+    
      const his = (h[0] == undefined ? 0:h[0]._sum);
-     const bet = (b[0] == undefined ? 0:b[0]._sum);
      
-     const balance = trans + his - bet;
+     const balance = trans + his;
      User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
          _io.emit(`update_balance_${userId}`,balance);
+         
+         return balance;
      });
  }
 
@@ -264,7 +261,7 @@ exports.chess_mankey = async function(req,res){
             if(delKey === 'j0' || delKey === 'J0'){
                 Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
                     Joiner.deleteMany({roomId:roomId},function(){
-                        const reward = (parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) + parseFloat(room.bet);
+                        const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
                         History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                        
                         
                         History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1}},function(){});
@@ -391,7 +388,7 @@ exports.chess_resign = function(req, res){
 
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
                 
-                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
+                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
                 
                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{
