@@ -4,6 +4,7 @@ const Joiner = require('../models/joiner.model');
 const Play = require('../models/play.model');
 const History = require('../models/history.model');
 const Game = require('../models/game.model');
+const Transaction = require('../models/transaction.model');
 const ObjectId = require('mongoose').Types.ObjectId; 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 
@@ -423,34 +424,49 @@ exports.deli_mono_start = async (req, res) => {
             Play.find({roomId:roomId, pace: 'ready'}, (err, play) => {
                 Joiner.find({roomId},(err, join)=>{
                     if(play.length == join.length){
-                        let tmp = []; let players = [];
-                        for(let x in join){
-                            players.push(join[x].creator);
-                            tmp.push({
-                                roomId : roomId,
-                                userId : join[x].creator,
-                                game : 1,
-                                isWin : 0,
-                                bet : room.bet,
-                                reward : parseFloat(room.bet) * -1
-                            });
-                        }
-                        History.insertMany(tmp);
+                        History.find({roomId},(err,his)=>{
+                            let joined = [];
+                            if(his != null){
+                                for(let x in his){
+                                    joined.push(his[x].userId);
+                                }
+                            }
+                            let tmp = []; let players = [];
+                            for(let x in join){
+                                if(joined.indexOf(join[x].creator) <= -1){
+                                    players.push(join[x].creator);
+                                    tmp.push({
+                                        roomId : roomId,
+                                        userId : join[x].creator,
+                                        game : 1,
+                                        isWin : 0,
+                                        bet : room.bet,
+                                        reward : parseFloat(room.bet) * -1
+                                    });
+                                }
+                                
+                            }
+                            if(tmp.length > 0)
+                                History.insertMany(tmp);
 
-                        Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
-                            let nextPlayer = players[Math.floor(Math.random()*players.length)];
-                            const pace = `next:${nextPlayer}`;
-                            const timestamp = new Date();
-                            var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
-                            let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                            data.token = tk;
-                            const newPlay = new Play(data);
-                            newPlay.save(function(){
-                                _io.emit(`chess_start_${roomId}`,r.creator);
-                                _io.emit(`room_remove`,{roomId:roomId});
-                                res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                            Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
+                                let nextPlayer = players[Math.floor(Math.random()*players.length)];
+                                const pace = `next:${nextPlayer}`;
+                                const timestamp = new Date();
+                                var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
+                                let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                                data.token = tk;
+                                const newPlay = new Play(data);
+                                newPlay.save(function(){
+                                    _io.emit(`delimono_start_${roomId}`,room.creator);
+                                    _io.emit(`room_remove`,{roomId:roomId});
+                                    res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                                });
                             });
                         });
+                        
+
+                        
                     }else{
                         res.send({code:0,msg:"Players are not ready"});
                     }
