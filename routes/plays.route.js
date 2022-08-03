@@ -7,17 +7,10 @@ const play = require('../controllers/play.controller');
 
 // a simple test url to check that all of our files are communicating correctly.
 router.get('/test', play.test);
-router.get('/deli-finance',play.finance);
-router.post('/ready',play.ready);
-router.post('/roll',play.roll);
-router.get('/dice',play.dice);
-router.post("/next",play.next);
-router.get('/auction',play.auction);
-router.post("/bid",play.bid);
-router.post("/choose_color",play.choose_color);
 
+router.post('/ready', play.ready);
 router.post('/deli-chinese-chess',play.chinesechess);
-router.get('/dev-deli-chinese-chess',play.devchinesechess);
+
 router.post('/chess_start',play.chess_start);
 router.post('/chess_mankey',play.chess_mankey);
 router.post('/chess-draw',play.chess_draw);
@@ -26,4 +19,7 @@ router.post('/chess-draw-response',play.chess_draw_response);
 
 router.post('/check-match',play.check_match);
 
+
+router.get('/deli-finance-bussiness', play.deli_finance_bussiness);
+router.post('/delimono-start',play.deli_mono_start);
 module.exports = router;

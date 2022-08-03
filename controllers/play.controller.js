@@ -3,6 +3,7 @@ const User = require('../models/user.model');
 const Joiner = require('../models/joiner.model');
 const Play = require('../models/play.model');
 const History = require('../models/history.model');
+const Game = require('../models/game.model');
 const ObjectId = require('mongoose').Types.ObjectId; 
 const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256").update(message).digest("hex");
 
@@ -16,47 +17,29 @@ exports.test = function (req, res) {
     res.send('Greetings from the Test controller!');
 };
 
-exports.finance = async function (req, res) {
-    let roomId = req.query.room;
-    let token = req.query.token;
-       
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-
-    //const userlist = await Joiner.find({roomId:roomId, creator:{$ne:decoded.user_id}});
-    userlist = await Joiner.aggregate([
-        {
-            $match: {
-                roomId:roomId
-            }
-        },
-        { "$project": { "userObjId": { "$toObjectId": "$creator" } } },
-        { "$lookup": {
-        "localField": "userObjId",
-        "from": "users",
-        "foreignField": "_id",
-        "as": "player"
-      }}
-        ]);
-        let ul = [];
-    for(let x in userlist){
-        let player = userlist[x].player[0];
-        ul.push({
-            _id:player._id,
-            name:player.name
-        });
-    } 
-
-    Room.findById(roomId, function (err, room){
-
-        User.findById(decoded.user_id, function (err, user) {
-           
-            res.render("play/finance", {room: room,user:user,userlist:ul});
-        });
-
-
-    });
-
-}
+const updateBalance = async (userId) => {
+    t = await Transaction.aggregate([
+         {$match : {creator:userId}},
+         {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
+         ],(err,t)=>{
+             
+            
+         });
+         const trans = (t[0] == undefined ? 0:t[0]._sum);
+         
+     h = await History.aggregate([
+             {$match : {userId:userId}},
+             {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+             ],(err,h)=>{
+                 
+             });
+     const his = (h[0] == undefined ? 0:h[0]._sum);
+     
+     const balance = trans + his;
+     User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
+         _io.emit(`update_balance_${userId}`,balance);
+     });
+ }
 
 const prevHash = function(room){
     Play.findOne({roomId:room}, function(err, play){
@@ -95,51 +78,6 @@ exports.ready = function(req,res){
     });
     
    
-}
-
-exports.roll = function(req, res){
-    const url = new URL(req.headers.referer);
-    const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const {die1,die2} = req.body;
-    _io.emit(`roll_${room}`,{die1:die1,die2:die2});
-}
-exports.dice = function(req, res){
-    res.send({die1:5,die2:4});
-}
-exports.next = function(req, res){
-    const url = new URL(req.headers.referer);
-    const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const {player} = req.body;
-    _io.emit(`next_${room}`,{player:player});
-}
-exports.auction = function(req,res){
-    const url = new URL(req.headers.referer);
-    const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    _io.emit(`auction_${room}`,decoded.user_id);
-}
-exports.bid = function(req,res){
-    const url = new URL(req.headers.referer);
-    const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const {bid,currentbidder} = req.body;
-    _io.emit(`bid_${room}`,{bid:bid,userId:decoded.user_id,currentbidder:currentbidder});
-    res.status(200);
-}
-
-exports.choose_color = function(req,res){
-    const url = new URL(req.headers.referer);
-    const token = url.searchParams.get("token");
-    const room = url.searchParams.get("room");
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const color = req.body.color;
-    _io.emit(`choose_color_${room}`,{userId:decoded.user_id,color:color});
 }
 
 exports.chinesechess = async function(req, res){
@@ -216,63 +154,7 @@ exports.chinesechess = async function(req, res){
     res.send({room: room,me:user,players:ul,play:play}); 
 }
 
-exports.devchinesechess = async function(req, res){
-    let roomId = req.query.room;
-    let token = req.query.token;
-  
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    userlist = await Joiner.aggregate([
-        {
-            $match: {
-                roomId: roomId
-            }
-        }, {
-            "$project": {
-                "userObjId": {
-                    "$toObjectId": "$creator"
-                }
-            }
-        }, {
-            "$lookup": {
-                "localField": "userObjId",
-                "from": "users",
-                "foreignField": "_id",
-                "as": "player",
-                "pipeline" : [
-                    { "$addFields": { "creatorObjId": { "$toString": "$_id" }}},
-                    
-                     {
-                     "$lookup" : {
-                         "from": "plays",
-                         "localField": "creatorObjId",
-                         "foreignField": "creator",
-                         "as": "play",
-                         pipeline : [{$match : {pace:"ready",roomId:roomId}}]
-                     },
-                    
-                 }]
-            }
-        }
-    ]);
-    const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
-    let ul = [];
-    for(let x in userlist){
-        let player = userlist[x].player[0];
-        let ready = player.play.length > 0 ? player.play[0].pace:"";
-        ul.push({
-            _id:player._id,
-            name:player.name,
-            isReady:(ready == 'ready' ? true:false)
-        });
-    } 
-    
-    Room.findById(roomId, function (err, room){
-        User.findById(decoded.user_id, function (err, user) {           
-            res.render("play/chinachess", {room: room,me:user,players:ul,play:play});
-        });
-    });
-    
-}
+
 
 exports.chess_start = async function(req,res){
     //const url = new URL(req.headers.referer);
@@ -378,6 +260,10 @@ exports.chess_mankey = async function(req,res){
                         
                         _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa});
                         _io.emit(`room_end_${roomId}`,{userId:decoded.user_id});
+                        updateBalance(decoded.user_id);
+                        History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},(err,u)=>{
+                            updateBalance(u.userId);
+                        });
                         res.send({code:2,msg:"The game is end"});
                     });                                
                 });
@@ -458,6 +344,10 @@ exports.chess_draw_response = async function(req, res){
                     const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
                     History.updateMany({roomId:roomId},{$set : {reward : reward}},()=>{});
                     _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
+                    updateBalance(decoded.user_id);
+                    History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},(err,u)=>{
+                        updateBalance(u.userId);
+                    });
                     res.send({code:1,msg:"Player accept draw"});
                 }else{
                     data.pace = 'reject';
@@ -490,7 +380,12 @@ exports.chess_resign = function(req, res){
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
                 const reward = (parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100) + parseFloat(room.bet));
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
-                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{});
+                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{
+                    updateBalance(decoded.user_id);
+                    History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},(err,u)=>{
+                        updateBalance(u.userId);
+                    });
+                });
                 _io.emit(`room_resign_${roomId}`,{userId:decoded.user_id,response:'resign'});
                 res.send({code:1,msg:"Player resign"});
             }
@@ -505,13 +400,65 @@ exports.check_match = function(req, res){
         if(join != null){
             Room.findOne({_id:new ObjectId(join.roomId)},(err, room)=>{
                 if(room.status == '1'){
-                    res.send({code:1,roomId:room._id});
+                    Game.findOne({id:room.game},(err,g)=>{
+                        res.send({code:1,roomId:room._id,gameAlias:g.alias});
+                    });                   
                 }else{
-                    res.send({code:0,msg:""});
+                    res.send({code:0,msg:"Game not start or game is end"});
                 }
             });
         }else{
-            res.send({code:0,msg:""});
+            res.send({code:0,msg:"You not join game"});
         }
     })
+}
+exports.deli_finance_bussiness = (req, res) => {
+
+}
+exports.deli_mono_start = async (req, res) => {
+    const {token,roomId} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Room.findOne({_id:new ObjectId(roomId), status:'0'},(err,room)=>{
+        if(room != null){
+            Play.find({roomId:roomId, pace: 'ready'}, (err, play) => {
+                Joiner.find({roomId},(err, join)=>{
+                    if(play.length == join.length){
+                        let tmp = []; let players = [];
+                        for(let x in join){
+                            players.push(join[x].creator);
+                            tmp.push({
+                                roomId : roomId,
+                                userId : join[x].creator,
+                                game : 1,
+                                isWin : 0,
+                                bet : room.bet,
+                                reward : parseFloat(room.bet) * -1
+                            });
+                        }
+                        History.insertMany(tmp);
+
+                        Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
+                            let nextPlayer = players[Math.floor(Math.random()*players.length)];
+                            const pace = `next:${nextPlayer}`;
+                            const timestamp = new Date();
+                            var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
+                            let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                            data.token = tk;
+                            const newPlay = new Play(data);
+                            newPlay.save(function(){
+                                _io.emit(`chess_start_${roomId}`,r.creator);
+                                _io.emit(`room_remove`,{roomId:roomId});
+                                res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                            });
+                        });
+                    }else{
+                        res.send({code:0,msg:"Players are not ready"});
+                    }
+                });                
+            });
+        }else{
+            res.send({code:0, msg: "Room not found"});
+        }
+    });
+    
 }

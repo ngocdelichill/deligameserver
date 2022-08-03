@@ -147,7 +147,7 @@ const updateBalance = async (userId) => {
     
     const balance = trans + his;
     User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
-        console.log(trans,his);
+        _io.emit(`update_balance_${userId}`,balance);
     });
 }
 
