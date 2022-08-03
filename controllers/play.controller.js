@@ -34,9 +34,16 @@ const updateBalance = async (userId) => {
              ],(err,h)=>{
                  
              });
+    b = await History.aggregate([
+             {$match : {userId:userId}},
+             {"$group" : {_id:"$userId", _sum : {$sum: "$bet"}}}
+             ],(err,h)=>{
+                 
+             });
      const his = (h[0] == undefined ? 0:h[0]._sum);
+     const bet = (b[0] == undefined ? 0:b[0]._sum);
      
-     const balance = trans + his;
+     const balance = trans + his - bet;
      User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
          _io.emit(`update_balance_${userId}`,balance);
      });
@@ -170,8 +177,9 @@ exports.chess_start = async function(req,res){
                 Room.findOne({_id: new ObjectId(roomId)},function(err, room){
                     //const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
                     Joiner.find({roomId:roomId},function(err,joiner){
-                        let tmp = [];
+                        let tmp = []; let players = [];
                         for(let x in joiner){
+                            players.push(joiner[x].creator);
                             tmp.push({
                                 roomId : roomId,
                                 userId : joiner[x].creator,
@@ -180,9 +188,11 @@ exports.chess_start = async function(req,res){
                                 bet : room.bet,
                                 reward : parseFloat(room.bet) * -1
                             });
-                        }
-                        
+                        }                        
                         History.insertMany(tmp);
+                        for(let x in players){
+                            updateBalance(players[x]);
+                        }
                     }); 
                 });                
                 
@@ -378,9 +388,12 @@ exports.chess_resign = function(req, res){
                 
                 data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));                
                 Play.create(data);
+
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
-                const reward = (parseFloat(room.bet) - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100) + parseFloat(room.bet));
+                
+                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100));
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
+                
                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{
                     updateBalance(decoded.user_id);
                     History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},(err,u)=>{
@@ -414,64 +427,97 @@ exports.check_match = function(req, res){
     })
 }
 exports.deli_finance_bussiness = (req, res) => {
+    const {token, roomId} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Room.findOne({_id: new ObjectId(roomId)},(err, room) => {
+        if(room != null){
+            Joiner.findOne({creator:decoded.user_id,roomId},(err, join)=>{
+                if(join != null){
+                    if(room.status == '0'){
+                        res.send({code:0, msg: "Room has not started"});
+                    }
+                    if(room.status == '1'){
+                        Play.findOne({roomId},(err, play)=>{
+                            let item = play.pace.split(",");
 
+                            res.send();
+                        }).sort({_id:-1}).limit(1);
+                    }
+                    if(room.status == '0'){
+                        res.send({code:0, msg: "Room is end"});
+                    }
+                }
+            });
+            
+        }else{
+            res.send({code:0,msg:"Room not found"});
+        }
+    });
 }
 exports.deli_mono_start = async (req, res) => {
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Room.findOne({_id:new ObjectId(roomId), status:'0'},(err,room)=>{
+    Room.findOne({_id:new ObjectId(roomId)},(err,room)=>{
         if(room != null){
-            Play.find({roomId:roomId, pace: 'ready'}, (err, play) => {
-                Joiner.find({roomId},(err, join)=>{
-                    if(play.length == join.length){
-                        History.find({roomId},(err,his)=>{
-                            let joined = [];
-                            if(his != null){
-                                for(let x in his){
-                                    joined.push(his[x].userId);
+            if(room.status == '0'){
+                Play.find({roomId:roomId, pace: 'ready'}, (err, play) => {
+                    Joiner.find({roomId},(err, join)=>{
+                        if(play.length == join.length){
+                            History.find({roomId},(err,his)=>{
+                                let joined = [];
+                                if(his != null){
+                                    for(let x in his){
+                                        joined.push(his[x].userId);
+                                    }
                                 }
-                            }
-                            let tmp = []; let players = [];
-                            for(let x in join){
-                                if(joined.indexOf(join[x].creator) <= -1){
+                                let tmp = []; let players = [];
+                                for(let x in join){
                                     players.push(join[x].creator);
-                                    tmp.push({
-                                        roomId : roomId,
-                                        userId : join[x].creator,
-                                        game : 1,
-                                        isWin : 0,
-                                        bet : room.bet,
-                                        reward : parseFloat(room.bet) * -1
-                                    });
+                                    if(joined.indexOf(join[x].creator) <= -1){                                    
+                                        tmp.push({
+                                            roomId : roomId,
+                                            userId : join[x].creator,
+                                            game : 1,
+                                            isWin : 0,
+                                            bet : room.bet,
+                                            reward : parseFloat(room.bet) * -1
+                                        });
+                                    }
+                                    
                                 }
-                                
-                            }
-                            if(tmp.length > 0)
-                                History.insertMany(tmp);
-
-                            Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
-                                let nextPlayer = players[Math.floor(Math.random()*players.length)];
-                                const pace = `next:${nextPlayer}`;
-                                const timestamp = new Date();
-                                var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
-                                let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                                data.token = tk;
-                                const newPlay = new Play(data);
-                                newPlay.save(function(){
-                                    _io.emit(`delimono_start_${roomId}`,room.creator);
-                                    _io.emit(`room_remove`,{roomId:roomId});
-                                    res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                                if(tmp.length > 0)
+                                    History.insertMany(tmp);
+    
+                                Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
+                                    let nextPlayer = players[Math.floor(Math.random()*players.length)];
+                                    const pace = `next:${nextPlayer}`;
+                                    const timestamp = new Date();
+                                    var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
+                                    let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                                    data.token = tk;
+                                    const newPlay = new Play(data);
+                                    newPlay.save(function(){
+                                        _io.emit(`delimono_start_${roomId}`,{next:nextPlayer});
+                                        _io.emit(`room_remove`,{roomId:roomId});
+                                        res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                                    });
                                 });
                             });
-                        });
-                        
-
-                        
-                    }else{
-                        res.send({code:0,msg:"Players are not ready"});
-                    }
-                });                
-            });
+                            
+    
+                            
+                        }else{
+                            res.send({code:0,msg:"Players are not ready"});
+                        }
+                    });                
+                });
+            }
+            if(room.status == '1'){
+                res.send({code:0, msg: "Room is running"});
+            }
+            if(room.status == '2'){
+                res.send({code:0, msg: "Room is end"});
+            }
         }else{
             res.send({code:0, msg: "Room not found"});
         }

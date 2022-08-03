@@ -128,28 +128,35 @@ exports.transaction_check = (req, res) => {
 }
 
 const updateBalance = async (userId) => {
-   t = await Transaction.aggregate([
-        {$match : {creator:userId}},
-        {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
-        ],(err,t)=>{
+    t = await Transaction.aggregate([
+         {$match : {creator:userId}},
+         {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
+         ],(err,t)=>{
+             
             
-           
-        });
-        const trans = (t[0] == undefined ? 0:t[0]._sum);
-        
-    h = await History.aggregate([
-            {$match : {userId:userId}},
-            {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
-            ],(err,h)=>{
-                
-            });
-    const his = (h[0] == undefined ? 0:h[0]._sum);
-    
-    const balance = trans + his;
-    User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
-        _io.emit(`update_balance_${userId}`,balance);
-    });
-}
+         });
+         const trans = (t[0] == undefined ? 0:t[0]._sum);
+         
+     h = await History.aggregate([
+             {$match : {userId:userId}},
+             {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+             ],(err,h)=>{
+                 
+             });
+    b = await History.aggregate([
+             {$match : {userId:userId}},
+             {"$group" : {_id:"$userId", _sum : {$sum: "$bet"}}}
+             ],(err,h)=>{
+                 
+             });
+     const his = (h[0] == undefined ? 0:h[0]._sum);
+     const bet = (b[0] == undefined ? 0:b[0]._sum);
+     
+     const balance = trans + his - bet;
+     User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
+         _io.emit(`update_balance_${userId}`,balance);
+     });
+ }
 
 const prevHash = function(room){
     Transaction.findOne({hash:{$ne:""}}, function(err, t){

@@ -20,6 +20,6 @@ router.post('/chess-draw-response',play.chess_draw_response);
 router.post('/check-match',play.check_match);
 
 
-router.get('/deli-finance-bussiness', play.deli_finance_bussiness);
+router.post('/deli-finance-bussiness', play.deli_finance_bussiness);
 router.post('/delimono-start',play.deli_mono_start);
 module.exports = router;
