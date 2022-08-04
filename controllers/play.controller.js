@@ -15,38 +15,43 @@ const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join } = require('path');
 exports.test = async function (req, res) {
-    /*
-    updateBalance(req.query.id);
     
-    User.find({},(err,u)=>{
-        h = ""
+    await updateBalance(req.query.id);
+    
+    const user = User.find({},(err,u)=>{
+        h = "";
         for(x in u){
             h += u[x]._id+":"+u[x].name+":"+u[x].balance+"<br>";
-        }res.send(h);
+        }
+        res.send(h);
     })
-    */
+    
 };
 
 const updateBalance = async (userId) => {
     Transaction.aggregate([
          {$match : {creator:userId}},
          {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
-         ],(err,t)=>{
+         ],async (err,t)=>{
             var trans = 0;
             if(t != null){
-                trans = t[0]._sum;
+                if(t[0] != undefined)
+                    trans = t[0]._sum;
             }
-            History.aggregate([
+            await History.aggregate([
                 {$match : {userId:userId}},
                 {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
-                ],(err,h)=>{
+                ],async (err,h)=>{
                     var his = 0;
-                    if(h != null)
-                        his = h[0]._sum;
+                    if(h != null && h != []){
+                        if(h[0] != undefined)                        
+                            his = h[0]._sum;
+                    }
                         const balance = trans + his;
      
-                        User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
+                        User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},(err)=>{
                             _io.emit(`update_balance_${userId}`,balance);
+                           
                         });
                 });
 
