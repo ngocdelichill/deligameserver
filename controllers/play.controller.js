@@ -396,7 +396,7 @@ exports.chess_resign = function(req, res){
 
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
                 
-                const reward = parseFloat(room.bet)*-1;
+                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
                 
                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},async ()=>{
