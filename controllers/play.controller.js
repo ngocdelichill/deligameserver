@@ -16,47 +16,42 @@ const { isObjectIdOrHexString } = require('mongoose');
 const { join } = require('path');
 exports.test = async function (req, res) {
     
-    await updateBalance(req.query.id);
-    
-    const user = User.find({},(err,u)=>{
-        h = "";
-        for(x in u){
-            h += u[x]._id+":"+u[x].name+":"+u[x].balance+"<br>";
-        }
-        res.send(h);
-    })
+    const balance = await updateBalance(req.query.id);
+    console.log(balance);
+    res.send("Fuck"+balance);
     
 };
 
 const updateBalance = async (userId) => {
-    Transaction.aggregate([
+    
+    const t = await Transaction.aggregate([
          {$match : {creator:userId}},
          {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
          ],async (err,t)=>{
-            var trans = 0;
-            if(t != null){
-                if(t[0] != undefined)
-                    trans = t[0]._sum;
-            }
-            await History.aggregate([
-                {$match : {userId:userId}},
-                {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
-                ],async (err,h)=>{
-                    var his = 0;
-                    if(h != null && h != []){
-                        if(h[0] != undefined)                        
-                            his = h[0]._sum;
-                    }
-                        const balance = parseFloat(trans) + parseFloat(his);
-     
-                        User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},(err)=>{
-                            _io.emit(`update_balance_${userId}`,balance);
-                           
-                        });
-                });
+            
 
          });
-     
+         var trans = 0;
+         if(t != null){
+             if(t[0] != undefined)
+                 trans = t[0]._sum;
+         }     
+    const h = await History.aggregate([
+    {$match : {userId:userId}},
+    {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+    ],async (err,h)=>{
+        
+    });
+    var his = 0;
+    if(h != null && h != []){
+        if(h[0] != undefined)                        
+            his = h[0]._sum;
+    }
+    const balance = parseFloat(trans) + parseFloat(his); 
+    //User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},(err)=>{
+    _io.emit(`update_balance_${userId}`,balance);
+    return balance;
+    //});
  }
 
 const prevHash = function(room){

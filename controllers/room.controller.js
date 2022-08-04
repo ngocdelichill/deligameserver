@@ -15,11 +15,33 @@ exports.test = async function (req, res) {
     res.send('Greetings from the Test controller!');
 };
 
-const checkBalance = async function(userId,bet){
-    const u = await User.findById(userId);
-    if(parseFloat(u.balance) > bet)
-        return true;
-    return false;
+const checkBalance = async function(userId){
+    const t = await Transaction.aggregate([
+        {$match : {creator:userId}},
+        {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
+        ],async (err,t)=>{
+           
+
+        });
+        var trans = 0;
+        if(t != null){
+            if(t[0] != undefined)
+                trans = t[0]._sum;
+        }     
+   const h = await History.aggregate([
+   {$match : {userId:userId}},
+   {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+   ],async (err,h)=>{
+       
+   });
+   var his = 0;
+   if(h != null && h != []){
+       if(h[0] != undefined)                        
+           his = h[0]._sum;
+   }
+   const balance = parseFloat(trans) + parseFloat(his); 
+
+   return balance;
 }
 
 exports.create = async function (req, res) {
@@ -29,9 +51,9 @@ exports.create = async function (req, res) {
     const newRom = new Room(
         {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
     );
-    User.findOne({_id: new ObjectId(decoded.user_id)},function(err, user){
+    User.findOne({_id: new ObjectId(decoded.user_id)},async function(err, user){
         delete user.password;
-        if(parseFloat(user.balance) >= parseFloat(bet)){
+        if(parseFloat(await checkBalance(decoded.user_id)) >= parseFloat(bet)){
             newRom.save(function (err,room){
                 _io.emit(`room_create`,{_id:room._id,name:room.name,password:(room.password!=""?true:false),maxPlayers:room.maxPlayers,bet:room.bet,classRoom:room.classRoom,level:room.level,game:room.game,players:[user]});
                 res.send(room);
@@ -47,7 +69,7 @@ exports.update = async function (req, res){
     const {roomId,token,name,password,max_players, bet} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     User.findOne({_id: new ObjectId(decoded.user_id)},async function(err, user){
-        if(parseFloat(user.balance) >= parseFloat(bet)){
+        if(parseFloat(await checkBalance(decoded.user_id)) >= parseFloat(bet)){
             const room = await Room.updateOne({creator:decoded.user_id,_id : new ObjectId(roomId)},{$set : {
                 name:name,
                 password:password,
@@ -146,9 +168,9 @@ exports.join = function (req, res) {
         _io.emit(`room_remove`,decoded.user_id);
         Room.findById(req.body.roomId,function(err,room){           
             if(room != null && room != undefined && room != {} ){
-                User.findOne({_id: new ObjectId(decoded.user_id)},function(err, user){
+                User.findOne({_id: new ObjectId(decoded.user_id)},async function(err, user){
                     if(room.password == password){
-                        if(parseFloat(user.balance) > parseFloat(room.bet)){
+                        if(parseFloat(await checkBalance(decoded.user_id)) > parseFloat(room.bet)){
                         let newJoin = new Joiner({roomId: roomId, creator: decoded.user_id});
                         newJoin.save().then(function(join){
                             User.findById(decoded.user_id,function(err,user){

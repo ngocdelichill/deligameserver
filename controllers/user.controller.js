@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require('nodemailer');
 const User = require('../models/user.model');
+const Transaction = require('../models/transaction.model');
+const History = require('../models/history.model');
 var aes256 = require('aes256');
 const { isObjectIdOrHexString } = require("mongoose");
 const { decode } = require("jsonwebtoken");
@@ -154,16 +156,58 @@ exports.update_password = async function (req, res) {
         res.send({code: 1, msg: 'Password changed successfully!'});
     });
 };
-exports.details = function (req, res) {
+
+const getBalance = async function(userId){
+    const t = await Transaction.aggregate([
+        {$match : {creator:userId}},
+        {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
+        ],async (err,t)=>{
+           
+
+        });
+        var trans = 0;
+        if(t != null){
+            if(t[0] != undefined)
+                trans = t[0]._sum;
+        }     
+   const h = await History.aggregate([
+   {$match : {userId:userId}},
+   {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+   ],async (err,h)=>{
+       
+   });
+   var his = 0;
+   if(h != null && h != []){
+       if(h[0] != undefined)                        
+           his = h[0]._sum;
+   }
+   const balance = parseFloat(trans) + parseFloat(his); 
+   //User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},(err)=>{
+   _io.emit(`update_balance_${userId}`,balance);
+   return balance;
+   //});
+ }
+
+exports.details =  function (req, res) {
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    User.findById(decoded.user_id, function (err, user) {
+    User.findById(decoded.user_id,async function (err, user) {
         if (err) 
             console.log(err);
         delete user.password;
-        res.send(user);
+        
+        res.send({
+            _id:user._id,
+            name:user.name,
+            email:user.email,
+            phone:user.phone,
+            balance: await getBalance(decoded.user_id)
+        });
     })
 };
+
+
+
 exports.update = async function (req, res) {
     const {token, name, phone, password} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
