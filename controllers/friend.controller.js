@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require('../models/user.model');
 const Friend = require('../models/friend.model');
+const ObjectId = require('mongoose').Types.ObjectId; 
 const { decode } = require("jsonwebtoken");
 
 
@@ -146,30 +147,31 @@ exports.invited_list = async function(req, res){
 exports.list = async function(req,res){
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const fri = await Friend.aggregate([
-        {$match:{"$or" : [{creator:decoded.user_id},{userId:decoded.user_id}],
-        "$and" : [{accept:true}]}},
-        { "$lookup": {
-          "let": { "userObjId": { "$toObjectId": "$userId" } },
-          "from": "users",
-          "pipeline": [
-            { "$match": { "$expr": { "$eq": [ "$_id", "$$userObjId" ] } }}
-          ],
-          "as": "friends"
-        }}
-      ]);
+    const fri = await Friend.find(
+        {"$or" : [{creator:decoded.user_id},{userId:decoded.user_id}],
+        "$and" : [{accept:true}]});
 
       let friend = [];
       for(let x in fri){
-        let f = fri[x].friends.length > 0 ? fri[x].friends[0]:[];        
-        friend.push({
-          "_id" : f._id,
-          "name" : f.name,
-          "phone" : f.phone,
-          "email" : f.email
+        if(decoded.user_id == fri[x].userId)
+          friend.push(fri[x].creator);
+        else
+          friend.push(new ObjectId(fri[x].userId));
+      }
+    User.find({_id:{$in: friend}},(err,li)=>{
+      let f = [];
+      for(let x in li){
+        f.push({
+          _id:li[x]._id,
+          name:li[x].name,
+          email:li[x].email,
+          phone:li[x].phone,
+          avatar:li[x].avatar
         });
       }
-    res.send(friend);
+      res.send(f);
+    });
+    
 }
 exports.accept = async function (req, res) {
     const {token, userId} = req.body;
