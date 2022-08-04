@@ -128,30 +128,30 @@ exports.transaction_check = (req, res) => {
 }
 
 const updateBalance = async (userId) => {
-    t = await Transaction.aggregate([
+    Transaction.aggregate([
          {$match : {creator:userId}},
          {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
          ],(err,t)=>{
-             
-            
-         });
-         const trans = (t[0] == undefined ? 0:t[0]._sum);
-         
-     h = await History.aggregate([
-             {$match : {userId:userId}},
-             {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
-             ],(err,h)=>{
-                 
-             });
-    
-     const his = (h[0] == undefined ? 0:h[0]._sum);
+            var trans = 0;
+            if(t != null){
+                trans = t[0]._sum;
+            }
+            History.aggregate([
+                {$match : {userId:userId}},
+                {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+                ],(err,h)=>{
+                    var his = 0;
+                    if(h != null)
+                        his = h[0]._sum;
+                        const balance = trans + his;
      
-     const balance = trans + his;
-     User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
-         _io.emit(`update_balance_${userId}`,balance);
-         
-         return balance;
-     });
+                        User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
+                            _io.emit(`update_balance_${userId}`,balance);
+                        });
+                });
+
+         });
+     
  }
 
 const prevHash = function(room){

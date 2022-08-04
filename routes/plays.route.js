@@ -22,4 +22,5 @@ router.post('/check-match',play.check_match);
 
 router.post('/deli-finance-bussiness', play.deli_finance_bussiness);
 router.post('/delimono-start',play.deli_mono_start);
+router.post('/delimono-roll-dice',play.roll_dice);
 module.exports = router;

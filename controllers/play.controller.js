@@ -15,35 +15,43 @@ const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join } = require('path');
 exports.test = async function (req, res) {
-    let result = await updateBalance(req.query.id);
-    res.send('Greetings from the Test controller! balance: '+result);
+    /*
+    updateBalance(req.query.id);
+    
+    User.find({},(err,u)=>{
+        h = ""
+        for(x in u){
+            h += u[x]._id+":"+u[x].name+":"+u[x].balance+"<br>";
+        }res.send(h);
+    })
+    */
 };
 
 const updateBalance = async (userId) => {
-    t = await Transaction.aggregate([
+    Transaction.aggregate([
          {$match : {creator:userId}},
          {"$group" : {_id:"$creator", _sum : {$sum: "$amount"}}}          
          ],(err,t)=>{
-             
-            
-         });
-         const trans = (t[0] == undefined ? 0:t[0]._sum);
-         
-     h = await History.aggregate([
-             {$match : {userId:userId}},
-             {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
-             ],(err,h)=>{
-                 
-             });
-    
-     const his = (h[0] == undefined ? 0:h[0]._sum);
+            var trans = 0;
+            if(t != null){
+                trans = t[0]._sum;
+            }
+            History.aggregate([
+                {$match : {userId:userId}},
+                {"$group" : {_id:"$userId", _sum : {$sum: "$reward"}}}
+                ],(err,h)=>{
+                    var his = 0;
+                    if(h != null)
+                        his = h[0]._sum;
+                        const balance = trans + his;
      
-     const balance = trans + his;
-     User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
-         _io.emit(`update_balance_${userId}`,balance);
-         
-         return balance;
-     });
+                        User.updateOne({_id:new ObjectId(userId)},{$set : {balance:balance}},()=>{
+                            _io.emit(`update_balance_${userId}`,balance);
+                        });
+                });
+
+         });
+     
  }
 
 const prevHash = function(room){
@@ -349,7 +357,7 @@ exports.chess_draw_response = async function(req, res){
                     data.token = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                     Play.create(data);
                     Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{});
-                    const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100); 
+                    const reward = parseFloat(room.bet) - (parseFloat(room.bet) * parseFloat(room.fee)/100) - parseFloat(room.bet); 
                     History.updateMany({roomId:roomId},{$set : {reward : reward}},()=>{});
                     _io.emit(`room_draw_response_${roomId}`,{userId:decoded.user_id,response:'accept'});
                     updateBalance(decoded.user_id);
@@ -388,7 +396,7 @@ exports.chess_resign = function(req, res){
 
                 History.updateOne({userId:decoded.user_id,roomId:roomId},{$set : {isWin:-1}},()=>{});
                 
-                const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
+                const reward = parseFloat(room.bet);
                 History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set : {isWin:1, reward:reward}},()=>{});
                 
                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:2}},()=>{
@@ -426,7 +434,7 @@ exports.check_match = function(req, res){
 exports.deli_finance_bussiness = (req, res) => {
     const {token, roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Room.findOne({_id: new ObjectId(roomId)},(err, room) => {
+    Room.findOne({_id: new ObjectId(roomId)},(err, room) => { 
         if(room != null){
             Joiner.findOne({creator:decoded.user_id,roomId},(err, join)=>{
                 if(join != null){
@@ -436,8 +444,13 @@ exports.deli_finance_bussiness = (req, res) => {
                     if(room.status == '1'){
                         Play.findOne({roomId},(err, play)=>{
                             let item = play.pace.split(",");
-
-                            res.send();
+                            for(let x in item){
+                                let obj = item[x].split(":");
+                                if(obj[0].indexOf('next') > -1){
+                                    res.send(item[x]);
+                                }
+                            }
+                            
                         }).sort({_id:-1}).limit(1);
                     }
                     if(room.status == '0'){
@@ -450,6 +463,46 @@ exports.deli_finance_bussiness = (req, res) => {
             res.send({code:0,msg:"Room not found"});
         }
     });
+}
+
+exports.roll_dice = (req, res) => {
+    const {token,roomId} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Room.findOne({_id: new ObjectId(roomId)},(err,room) => {
+        if(room.status == '0'){
+            res.send({code:0,msg:"Game has not started"});
+        }
+        if(room.status == '2'){
+            res.send({code:0,msg:"Game is end"});
+        }
+        if(room.status == '1'){
+            Play.findOne({roomId},(err, play)=>{
+                if(play != null){
+                    let pace = play.pace.split(",");
+                    for(let x in pace){
+                        let item = pace[x].split(":");
+                        if(item[0] == 'next'){
+                            if(item[1] == decoded.user_id){
+                                let a = Math.floor(Math.random() * 6) + 1;
+                                let b = Math.floor(Math.random() * 6) + 1;
+                                _io.emit(`roll_dice_${roomId}`,{
+                                    userId:decoded.user_id,
+                                    diceA:a,
+                                    diceB:b,
+                                    next:nextPlayer(a,b)
+                                });
+                            }
+                        }
+                    }
+                }
+            }).sort({_id:-1}).limit(1);
+        }
+    })
+}
+const nextPlayer = (a,b) => {
+    const {token,roomId} = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Joiner.find()
 }
 exports.deli_mono_start = async (req, res) => {
     const {token,roomId} = req.body;
