@@ -4,6 +4,7 @@ const Joiner = require('../models/joiner.model');
 const User = require('../models/user.model');
 const Play = require('../models/play.model');
 const History = require('../models/history.model');
+const Transaction = require('../models/transaction.model');
 const { parse } = require("dotenv");
 const { decode } = require("jsonwebtoken");
 const ObjectId = require('mongoose').Types.ObjectId; 
