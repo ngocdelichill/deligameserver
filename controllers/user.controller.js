@@ -192,17 +192,14 @@ exports.details =  function (req, res) {
     const {token} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     User.findById(decoded.user_id,async function (err, user) {
-        if (err) 
-            console.log(err);
-        delete user.password;
-        
-        res.send({
-            _id:user._id,
-            name:user.name,
-            email:user.email,
-            phone:user.phone,
-            balance: await getBalance(decoded.user_id)
-        });
+        if (user != null) 
+            res.send({
+                _id:user._id,
+                name:user.name,
+                email:user.email,
+                phone:user.phone,
+                balance: await getBalance(decoded.user_id)
+            });
     })
 };
 
