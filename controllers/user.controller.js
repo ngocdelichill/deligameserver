@@ -198,7 +198,8 @@ exports.details =  function (req, res) {
                 name:user.name,
                 email:user.email,
                 phone:user.phone,
-                balance: await getBalance(decoded.user_id)
+                balance: await getBalance(decoded.user_id),
+                avatar:user.avatar
             });
     })
 };

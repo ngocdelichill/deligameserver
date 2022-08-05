@@ -13,7 +13,7 @@ const crypto = require("crypto"), SHA256 = message => crypto.createHash("sha256"
 const jwt = require("jsonwebtoken");
 const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
-const { join } = require('path');
+const { join, parse } = require('path');
 const { find } = require('../models/room.model');
 exports.test = async function (req, res) {
     
@@ -481,44 +481,63 @@ exports.roll_dice = (req, res) => {
             Play.findOne({roomId},async (err, play)=>{
                 if(play != null){
                     let pace = play.pace.split(",");
+                    let pace_next = decoded.user_id;
+                    let pace_position = 0;
+                    let pace_balance = 1500;
                     for(let x in pace){
                         let item = pace[x].split(":");
-                        if(item[0] == 'next'){
-                            if(item[1] == decoded.user_id){
-                                let a = Math.floor(Math.random() * 6) + 1;
-                                let b = Math.floor(Math.random() * 6) + 1;
-                                if(a == b){
-                                    next = decoded.user_id;
-                                }else{
-                                    const join = await Joiner.find({roomId}).sort({_id:-1});
-                                    let tmp = [];
-                                    for(let i in join){
-                                        tmp.push(join[i]._id);
-                                    }
-                                    let key = tmp.indexOf(decoded.user_id);
-                                    if(key+1 == tmp.length || tmp[key+1] != undefined){
-                                        next = tmp[key+1];
-                                    }else{
-                                        next = tmp[0];
-                                    }
-                                   Play.create({
-                                    roomId,
-                                    pace : "",
-                                    creator:decoded.user_id
-                                   });
-                                }
-                                
-                                _io.emit(`roll_dice_${roomId}`,{
-                                    userId:decoded.user_id,
-                                    diceA:a,
-                                    diceB:b,
-                                    next:next
-                                });
-                                res.send({code:1,msg:""});
-                            }else{
-                                res.send({code:0,msg:"Not allow roll"});
-                            }
+                        if(item[0] == 'next')
+                            pace_next = item[1];
+                    }
+                    const _me = await Play.findOne({roomId,creator:decoded.user_id}).sort({_id:-1}).limit(1);
+                    if(_me.pace != 'ready'){
+                        let me_pace = _me.pace.split(",");
+                        for(x in me_pace){
+                            let item = me_pace[x].split(":");
+                            if($item[0] == 'position')
+                                pace_position = parseInt($item[1]);
+                            if($item[0] == 'balance')
+                                pace_balance = parseFloat($item[1]);
                         }
+                        
+                    }
+                    if(pace_next == decoded.user_id){
+                        let a = Math.floor(Math.random() * 6) + 1;
+                        let b = Math.floor(Math.random() * 6) + 1;
+                        if(a == b){
+                            next = decoded.user_id;
+                        }else{
+                            const join = await Joiner.find({roomId}).sort({_id:-1});
+                            let tmp = [];
+                            for(let i in join){
+                                tmp.push(join[i]._id);
+                            }
+                            let key = tmp.indexOf(decoded.user_id);
+                            if(key+1 == tmp.length || tmp[key+1] != undefined){
+                                next = tmp[key+1];
+                            }else{
+                                next = tmp[0];
+                            }
+                            let position = (pace_position + a + b) % 39;
+                            let square = Square[position];
+                            
+                            data = {
+                                roomId,
+                                pace : `dice:[${a},${b}],position:${position},balance:1500,reward:0,`,
+                                creator:decoded.user_id
+                            };
+                           //Play.create(data);
+                        }
+                        
+                        _io.emit(`roll_dice_${roomId}`,{
+                            userId:decoded.user_id,
+                            diceA:a,
+                            diceB:b,
+                            next:next
+                        });
+                        res.send({code:1,msg:""});
+                    }else{
+                        res.send({code:0,msg:"Not allow roll"});
                     }
                 }
             }).sort({_id:-1}).limit(1);
@@ -565,7 +584,7 @@ exports.deli_mono_start = async (req, res) => {
     
                                 Room.updateOne({_id: new ObjectId(roomId)},{$set : {status:1}},()=>{
                                     let nextPlayer = players[Math.floor(Math.random()*players.length)];
-                                    const pace = `next:${nextPlayer}`;
+                                    const pace = `balance:1500,next:${nextPlayer}`;
                                     const timestamp = new Date();
                                     var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
                                     let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
@@ -599,3 +618,56 @@ exports.deli_mono_start = async (req, res) => {
     });
     
 }
+
+const SQ = (name,pricetext,color,price) => {
+    return {
+      name:name,
+      pricetext:pricetext,
+      color:color,
+      price:price
+    }
+  }
+
+  const Square = [
+  SQ("GO","COLLECT $200 SALARY AS YOU PASS.", "#FFFFFF",0),
+  SQ("Mediterranean Avenue", "$60", "#8B4513",60),
+  SQ("Community Chest", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Baltic Avenue", "$60", "#8B4513", 60),
+  SQ("City Tax", "Pay $200", "#FFFFFF",0),
+  SQ("Reading Railroad", "$200", "#FFFFFF", 200, 1),
+  SQ("Oriental Avenue", "$100", "#87CEEB", 100),
+  SQ("Chance", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Vermont Avenue", "$100", "#87CEEB", 100),
+  SQ("Connecticut Avenue", "$120", "#87CEEB", 120),
+  SQ("Just Visiting", "", "#FFFFFF",0),
+  SQ("St. Charles Place", "$140", "#FF0080", 140),
+  SQ("Electric Company", "$150", "#FFFFFF", 150),
+  SQ("States Avenue", "$140", "#FF0080", 140),
+  SQ("Virginia Avenue", "$160", "#FF0080", 160),
+  SQ("Pennsylvania Railroad", "$200", "#FFFFFF", 200),
+  SQ("St. James Place", "$180", "#FFA500", 180),
+  SQ("Community Chest", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Tennessee Avenue", "$180", "#FFA500", 180),
+  SQ("New York Avenue", "$200", "#FFA500", 200),
+  SQ("Free Parking", "", "#FFFFFF",0),
+  SQ("Kentucky Avenue", "$220", "#FF0000", 220),
+  SQ("Chance", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Indiana Avenue", "$220", "#FF0000", 220),
+  SQ("Illinois Avenue", "$240", "#FF0000", 240),
+  SQ("B&O Railroad", "$200", "#FFFFFF", 200),
+  SQ("Atlantic Avenue", "$260", "#FFFF00", 260),
+  SQ("Ventnor Avenue", "$260", "#FFFF00", 260),
+  SQ("Water Works", "$150", "#FFFFFF", 150),
+  SQ("Marvin Gardens", "$280", "#FFFF00", 280),
+  SQ("Go to Jail", "Go directly to Jail. Do not pass GO. Do not collect $200.", "#FFFFFF",0),
+  SQ("Pacific Avenue", "$300", "#008000", 300),
+  SQ("North Carolina Avenue", "$300", "#008000", 300),
+  SQ("Community Chest", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Pennsylvania Avenue", "$320", "#008000", 320),
+  SQ("Short Line", "$200", "#FFFFFF", 200),
+  SQ("Chance", "FOLLOW INSTRUCTIONS ON TOP CARD", "#FFFFFF",0),
+  SQ("Park Place", "$350", "#0000FF", 350),
+  SQ("LUXURY TAX", "Pay $100", "#FFFFFF",0),
+  SQ("Boardwalk", "$400", "#0000FF", 400)
+];
+  
