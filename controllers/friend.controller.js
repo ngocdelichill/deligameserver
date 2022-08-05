@@ -84,8 +84,9 @@ exports.add = function(req,res){
 
 exports.request_list = async function(req, res){
     const {token}  = req.body;
-    const limit = isNaN(req.body.limit) ? 10:req.body.limit;
-    const skip = isNaN(req.body.skip) ? 0:req.body.skip;
+    let limit = isNaN(req.query._limit) ? 20:parseInt(req.query._limit);
+    let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
+    let skip = page * limit - limit;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     
     const friend = await Friend.aggregate([
@@ -98,7 +99,7 @@ exports.request_list = async function(req, res){
           ],
           "as": "friends"
         }}
-      ]).limit(limit).skip(skip);
+      ]).sort({_id:-1}).skip(skip).limit(limit);
       let fri = [];
       for(let x in friend){
         let item = friend[x].friends[0];

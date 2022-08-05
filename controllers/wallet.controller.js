@@ -162,3 +162,15 @@ const prevHash = function(room){
         return "";
     }).sort({_id:-1}).limit(1);
 };
+
+exports.transaction_list = (req, res) => {
+    const {token} = req.body;
+    let limit = isNaN(req.query._limit) ? 20:parseInt(req.query._limit);
+    let page = isNaN(req.query._page) ? 1:parseInt(req.query._page);
+    let skip = page * limit - limit;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    Transaction.find({creator:decoded.user_id},(err, trans)=>{
+        if(trans != null)
+            res.send(trans);
+    }).sort({_id:-1}).skip(skip).limit(limit);
+}

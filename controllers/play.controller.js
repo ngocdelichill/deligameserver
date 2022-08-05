@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join } = require('path');
+const { find } = require('../models/room.model');
 exports.test = async function (req, res) {
     
     const balance = await updateBalance(req.query.id);
@@ -469,6 +470,7 @@ exports.roll_dice = (req, res) => {
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Room.findOne({_id: new ObjectId(roomId)},(err,room) => {
+        if(room != null){
         if(room.status == '0'){
             res.send({code:0,msg:"Game has not started"});
         }
@@ -476,7 +478,7 @@ exports.roll_dice = (req, res) => {
             res.send({code:0,msg:"Game is end"});
         }
         if(room.status == '1'){
-            Play.findOne({roomId},(err, play)=>{
+            Play.findOne({roomId},async (err, play)=>{
                 if(play != null){
                     let pace = play.pace.split(",");
                     for(let x in pace){
@@ -485,25 +487,34 @@ exports.roll_dice = (req, res) => {
                             if(item[1] == decoded.user_id){
                                 let a = Math.floor(Math.random() * 6) + 1;
                                 let b = Math.floor(Math.random() * 6) + 1;
+                                if(a == b){
+                                    next = decoded.user_id;
+                                }else{
+                                    const join = await Joiner.find({roomId,userId});
+
+                                }
+                                
                                 _io.emit(`roll_dice_${roomId}`,{
                                     userId:decoded.user_id,
                                     diceA:a,
                                     diceB:b,
-                                    next:nextPlayer(a,b)
+                                    next:next
                                 });
+                                res.send({code:1,msg:""});
+                            }else{
+                                res.send({code:0,msg:"Not allow roll"});
                             }
                         }
                     }
                 }
             }).sort({_id:-1}).limit(1);
         }
+        }else{
+            res.send({code:0,msg:"Room not found"});
+        }
     })
 }
-const nextPlayer = (a,b) => {
-    const {token,roomId} = req.body;
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    Joiner.find()
-}
+
 exports.deli_mono_start = async (req, res) => {
     const {token,roomId} = req.body;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
