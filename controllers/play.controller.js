@@ -490,8 +490,22 @@ exports.roll_dice = (req, res) => {
                                 if(a == b){
                                     next = decoded.user_id;
                                 }else{
-                                    const join = await Joiner.find({roomId,userId});
-
+                                    const join = await Joiner.find({roomId}).sort({_id:-1});
+                                    let tmp = [];
+                                    for(let i in join){
+                                        tmp.push(join[i]._id);
+                                    }
+                                    let key = tmp.indexOf(decoded.user_id);
+                                    if(key+1 == tmp.length || tmp[key+1] != undefined){
+                                        next = tmp[key+1];
+                                    }else{
+                                        next = tmp[0];
+                                    }
+                                   Play.create({
+                                    roomId,
+                                    pace : "",
+                                    creator:decoded.user_id
+                                   });
                                 }
                                 
                                 _io.emit(`roll_dice_${roomId}`,{

@@ -170,7 +170,24 @@ exports.transaction_list = (req, res) => {
     let skip = page * limit - limit;
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     Transaction.find({creator:decoded.user_id},(err, trans)=>{
-        if(trans != null)
-            res.send(trans);
+        if(trans != null){
+            Transaction.aggregate([
+                { "$addFields": { "id": { "$toString": "$_id" }}},
+                {
+                    $match: {
+                        creator:decoded.user_id
+                    }
+                },
+                { $group: { _id: null, _count: { $sum: 1 } } },
+                { $project: { _id: 0 } }
+               
+            ],(err,total)=>{
+                res.send({code:1,data:trans,total:(total[0]!=undefined?total[0]._count:0)});
+            });
+            
+        }else{
+            res.send({code:0,msg:"Transaction not found"});
+        }
+            
     }).sort({_id:-1}).skip(skip).limit(limit);
 }
