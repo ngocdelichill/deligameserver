@@ -19,7 +19,9 @@ const { INSPECT_MAX_BYTES } = require('buffer');
 let _timeLimitStart;
 const _MAP = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
 exports.test = async function (req, res) {    
-    
+    Play.findOne({},(err, play)=>{
+        
+    }).sort({_id:-1}).limit(1);
     res.send("Finish");
 };
 
@@ -153,7 +155,7 @@ exports.chinesechess = async function(req, res){
     }  
     var classRoom = ['No Class','Start-up','Millionaire','Billionaire'];
     var levelRoom = ['No Level','Silver','Glod','Diamond'];
-    
+    let timeRemain = new Date().getTime() - (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit])
     const r = await Room.findById(roomId);            
     var room = {
         classRoomTitle : classRoom[r.classRoom],
@@ -170,7 +172,8 @@ exports.chinesechess = async function(req, res){
         status : r.status,
         createdAt : r.createdAt,
         isPlay : isPlay,
-		timeLimit: timeLimit[r.timeLimit]
+		timeLimit: timeLimit[r.timeLimit],
+        timeRemain: timeRemain > 0 ? timeRemain:0
     };
     
     const user = await User.findById(decoded.user_id);   
