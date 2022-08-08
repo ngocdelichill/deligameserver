@@ -155,8 +155,9 @@ exports.chinesechess = async function(req, res){
     }  
     var classRoom = ['No Class','Start-up','Millionaire','Billionaire'];
     var levelRoom = ['No Level','Silver','Glod','Diamond'];
-    let timeRemain = new Date().getTime() - (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit])
-    const r = await Room.findById(roomId);            
+    
+    const r = await Room.findById(roomId);     
+    let timeRemain = new Date().getTime() - (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit]);       
     var room = {
         classRoomTitle : classRoom[r.classRoom],
         levelRoomTitle : levelRoom[r.level],
