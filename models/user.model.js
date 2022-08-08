@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String },
     token: { type: String },
     balance: {type: Number, required: false},
-    avatar: {type: String, required:false}
+    avatar: {type: String, required:false, default:"/images/user/user-avatar-default.png"}
   });
 
 // Export the model
