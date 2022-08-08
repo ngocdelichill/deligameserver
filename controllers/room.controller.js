@@ -46,11 +46,11 @@ const checkBalance = async function(userId){
 }
 
 exports.create = async function (req, res) {
-    const {name, password, token,max_players,bet, class_room, level, game} = req.body;
+    const {name, password, token,max_players,bet, class_room, level, game, timeLimit} = req.body;
     const gameDetail = await Game.findOne({id:game});
     const decoded = jwt.verify(token, process.env.JWT_KEY);
     const newRom = new Room(
-        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee}
+        {name: name, password: password, creator: decoded.user_id, maxPlayers:max_players,bet, classRoom: class_room, level:level, game:game, fee: gameDetail.fee,timeLimit:timeLimit}
     );
     User.findOne({_id: new ObjectId(decoded.user_id)},async function(err, user){
         delete user.password;
