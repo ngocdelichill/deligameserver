@@ -157,7 +157,7 @@ exports.chinesechess = async function(req, res){
     var levelRoom = ['No Level','Silver','Glod','Diamond'];
     
     const r = await Room.findById(roomId);     
-    let timeRemain = new Date().getTime() - (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit]);       
+    let timeRemain = (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit]);       
     var room = {
         classRoomTitle : classRoom[r.classRoom],
         levelRoomTitle : levelRoom[r.level],
@@ -174,7 +174,7 @@ exports.chinesechess = async function(req, res){
         createdAt : r.createdAt,
         isPlay : isPlay,
 		timeLimit: timeLimit[r.timeLimit],
-        timeRemain: timeRemain > 0 ? timeRemain:0
+        timeRemain: timeRemain
     };
     
     const user = await User.findById(decoded.user_id);   
