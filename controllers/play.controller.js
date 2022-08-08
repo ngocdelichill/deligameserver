@@ -215,14 +215,16 @@ exports.chess_start = async function(req,res){
                     }); 
                     clearTimeout(_timeLimitStart);
                     _timeLimitStart = setTimeout(async ()=>{
-                        const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
-                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                    
-                        History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
-                        await updateBalance(decoded.user_id);
-                        History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},async (err,u)=>{
-                            await updateBalance(u.userId);
-                        });
-                        _io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});   
+						Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},async function(){
+							const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
+							History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                    
+							History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+							await updateBalance(decoded.user_id);
+							History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},async (err,u)=>{
+								await updateBalance(u.userId);
+							});
+							_io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});
+						});
                     },parseInt(timeLimit[room.timeLimit]) + 3000);
                                 
                 
