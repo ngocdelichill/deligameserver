@@ -15,7 +15,9 @@ const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join, parse } = require('path');
 const { find } = require('../models/room.model');
+const { INSPECT_MAX_BYTES } = require('buffer');
 let _timeLimitStart;
+const _MAP = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
 exports.test = async function (req, res) {    
     
     res.send("Finish");
@@ -133,9 +135,15 @@ exports.chinesechess = async function(req, res){
     ]);
     const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
     let ul = [];
+    let isPlay = null;
+    if(play.pace == _MAP){
+        isPlay = play.creator;
+    }
     for(let x in userlist){
         let player = userlist[x].player[0];
         let ready = player.play.length > 0 ? player.play[0].pace:"";
+        if(isPlay == null)
+            isPlay = player._id;
         ul.push({
             _id:player._id,
             name:player.name,
@@ -160,7 +168,8 @@ exports.chinesechess = async function(req, res){
         level : r.level,
         game : r.game,
         status : r.status,
-        createdAt : r.createdAt
+        createdAt : r.createdAt,
+        isPlay : isPlay
     };
     
     const user = await User.findById(decoded.user_id);   
@@ -199,18 +208,29 @@ exports.chess_start = async function(req,res){
                             await updateBalance(players[x]);
                         }
                     }); 
-                });                
+                    clearTimeout(_timeLimitStart);
+                    _timeLimitStart = setTimeout(async ()=>{
+                        const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
+                        History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                    
+                        History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:-1}},function(){});
+                        await updateBalance(decoded.user_id);
+                        History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},async (err,u)=>{
+                            await updateBalance(u.userId);
+                        });
+                        _io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});   
+                    },parseInt(timeLimit[room.timeLimit]) + 3000);
+                                
                 
-                const pace = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
-                const timestamp = new Date();
-                var data = {roomId:roomId,creator:decoded.user_id,pace:pace,createdAt:timestamp};
-                let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
-                data.token = tk;
-                const newPlay = new Play(data);
-                newPlay.save(function(){
-                    _io.emit(`chess_start_${roomId}`,r.creator);
-                    _io.emit(`room_remove`,{roomId:roomId});
-                    res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                    const timestamp = new Date();
+                    var data = {roomId:roomId,creator:decoded.user_id,pace:_MAP,createdAt:timestamp};
+                    let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
+                    data.token = tk;
+                    const newPlay = new Play(data);
+                    newPlay.save(function(){
+                        _io.emit(`chess_start_${roomId}`,r.creator);
+                        _io.emit(`room_remove`,{roomId:roomId});
+                        res.status(200).send({code:1,msg:'Countdown 3s to play game'});
+                    });
                 });
             });
         }else{
