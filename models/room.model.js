@@ -52,6 +52,11 @@ const RoomSchema = new mongoose.Schema({
       type: Number,
       required : true,
       default : 0
+    },
+    timeLimit : {
+      type : Number,
+      required: true,
+      default : 1 
     }
   });
 

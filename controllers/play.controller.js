@@ -15,13 +15,12 @@ const { decode } = require('punycode');
 const { isObjectIdOrHexString } = require('mongoose');
 const { join, parse } = require('path');
 const { find } = require('../models/room.model');
-exports.test = async function (req, res) {
+let _timeLimitStart;
+exports.test = async function (req, res) {    
     
-    const balance = await updateBalance(req.query.id);
-    console.log(balance);
-    res.send("Fuck"+balance);
-    
+    res.send("Finish");
 };
+
 
 const updateBalance = async (userId) => {
     
@@ -221,6 +220,8 @@ exports.chess_start = async function(req,res){
     
 }
 
+const timeLimit = [0,5000,180000];
+
 exports.chess_mankey = async function(req,res){
     //const url = new URL(req.headers.referer);
     //const token = url.searchParams.get("token");
@@ -266,7 +267,7 @@ exports.chess_mankey = async function(req,res){
         let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
         data.token = tk;            
         const newPlay = new Play(data);
-        newPlay.save(function(err,pl){
+        newPlay.save(async function(err,pl){
             if(delKey === 'j0' || delKey === 'J0'){
                 Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
                     Joiner.deleteMany({roomId:roomId},async function(){
@@ -285,8 +286,20 @@ exports.chess_mankey = async function(req,res){
                     });                                
                 });
             }else{
-                _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa});
+                clearTimeout(_timeLimitStart);
+                _timeLimitStart = setTimeout(async ()=>{
+                    const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
+                    History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                    
+                    History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1}},function(){});
+                    await updateBalance(decoded.user_id);
+                    History.findOne({userId:{$ne:decoded.user_id},roomId:roomId},async (err,u)=>{
+                        await updateBalance(u.userId);
+                    });
+                    _io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});   
+                },timeLimit[room.timeLimit]);
+                _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa,serverTime:timestamp.getTime()});
                 res.status(200).send({userId:decoded.user_id,pace:pa});
+                
             }
             
 
@@ -294,8 +307,7 @@ exports.chess_mankey = async function(req,res){
     }
     if(room.status == 2){
         res.status(200).send({code:0,msg:"The game ends"});
-    }
-    
+    }    
 }
 
 const paceToString = function(pace){
@@ -316,6 +328,7 @@ const paceToObject = function(pace){
 }
 
 exports.chess_draw = async function(req,res){
+    clearTimeout(_timeLimitStart);
     const {token,roomId} = req.body;
     Room.findOne({_id : new ObjectId(roomId)},async function(err,room){
         if(room != null){
