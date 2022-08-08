@@ -170,7 +170,7 @@ exports.chinesechess = async function(req, res){
         status : r.status,
         createdAt : r.createdAt,
         isPlay : isPlay,
-		timeLimit: r.timeLimit
+		timeLimit: timeLimit[r.timeLimit]
     };
     
     const user = await User.findById(decoded.user_id);   
@@ -319,7 +319,7 @@ exports.chess_mankey = async function(req,res){
 						});
 						_io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});
 					});
-                },timeLimit[room.timeLimit]);
+                },parseInt(timeLimit[room.timeLimit]) + 5000);
                 _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa,serverTime:timestamp.getTime()});
                 res.status(200).send({userId:decoded.user_id,pace:pa});
                 
