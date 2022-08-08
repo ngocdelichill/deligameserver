@@ -157,7 +157,7 @@ exports.chinesechess = async function(req, res){
     var levelRoom = ['No Level','Silver','Glod','Diamond'];
     
     const r = await Room.findById(roomId);     
-    let timeRemain = (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit]);       
+    let timeRemain = (new Date(play.createdAt).getTime() + timeLimit[r.timeLimit]) - Date.now();       
     var room = {
         classRoomTitle : classRoom[r.classRoom],
         levelRoomTitle : levelRoom[r.level],
@@ -225,7 +225,7 @@ exports.chess_start = async function(req,res){
 							});
 							_io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});
 						});
-                    },parseInt(timeLimit[room.timeLimit]) + 3000);
+                    },parseInt(timeLimit[room.timeLimit]) + 5000);
                                 
                 
                     const timestamp = new Date();
