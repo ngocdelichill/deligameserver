@@ -308,8 +308,8 @@ exports.chess_mankey = async function(req,res){
                 });
             }else{
                 clearTimeout(_timeLimitStart);
-                _timeLimitStart = setTimeout(async ()=>{
-                    Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},function(){
+                _timeLimitStart = setTimeout(()=>{
+                    Room.updateOne({_id : new ObjectId(roomId)},{$set:{status:2}},async function(){
 						const reward = (parseFloat(room.bet)*2 - (parseFloat(room.bet) * 2 * parseFloat(room.fee)/100)) - parseFloat(room.bet);
 						History.updateOne({userId:decoded.user_id,roomId:roomId},{$set:{isWin:1, reward:reward}},function(){});                    
 						History.updateOne({userId:{$ne:decoded.user_id},roomId:roomId},{$set:{isWin:-1}},function(){});
@@ -318,7 +318,7 @@ exports.chess_mankey = async function(req,res){
 							await updateBalance(u.userId);
 						});
 						_io.emit(`chess_timeout_${roomId}`,{playerWin:decoded.user_id});
-					}
+					});
                 },timeLimit[room.timeLimit]);
                 _io.emit(`chess_mankey_${roomId}`,{userId:decoded.user_id,key:key.toUpperCase(),pace:pa,serverTime:timestamp.getTime()});
                 res.status(200).send({userId:decoded.user_id,pace:pa});
