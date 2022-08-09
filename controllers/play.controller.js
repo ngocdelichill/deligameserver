@@ -230,7 +230,7 @@ exports.chess_start = async function(req,res){
                                 
                 
                     const timestamp = new Date();
-                    const map = _MAP;
+                    var map = _MAP;
                     if(room.game == '2')
                         map = _KOREAN_MAP;
                     var data = {roomId:roomId,creator:decoded.user_id,pace:map,createdAt:timestamp};
