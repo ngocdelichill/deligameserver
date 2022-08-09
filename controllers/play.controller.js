@@ -233,7 +233,7 @@ exports.chess_start = async function(req,res){
                     const map = _MAP;
                     if(room.game == '2')
                         map = _KOREAN_MAP;
-                    var data = {roomId:roomId,creator:decoded.user_id,pace:_MAP,createdAt:timestamp};
+                    var data = {roomId:roomId,creator:decoded.user_id,pace:map,createdAt:timestamp};
                     let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                     data.token = tk;
                     const newPlay = new Play(data);
