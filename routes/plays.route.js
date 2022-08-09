@@ -10,7 +10,7 @@ router.get('/test', play.test);
 
 router.post('/ready', play.ready);
 router.post('/deli-chinese-chess',play.chinesechess);
-
+router.post('/korean-chess',play.chinesechess);
 router.post('/chess_start',play.chess_start);
 router.post('/chess_mankey',play.chess_mankey);
 router.post('/chess-draw',play.chess_draw);
