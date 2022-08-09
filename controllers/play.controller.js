@@ -18,6 +18,7 @@ const { find } = require('../models/room.model');
 
 let _timeLimitStart;
 const _MAP = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.0,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.9,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
+const _KOREAN_MAP = "C1:0.0,M1:1.0,X1:2.0,S1:3.0,J0:4.1,S0:5.0,X0:6.0,M0:7.0,C0:8.0,P1:1.2,P0:7.2,Z4:0.3,Z3:2.3,Z2:4.3,Z1:6.3,Z0:8.3,z0:0.6,z1:2.6,z2:4.6,z3:6.6,z4:8.6,p0:1.7,p1:7.7,c0:0.9,m0:1.9,x0:2.9,s0:3.9,j0:4.8,s1:5.9,x1:6.9,m1:7.9,c1:8.9";
 exports.test = async function (req, res) {    
     Play.findOne({},(err, play)=>{
         
@@ -138,7 +139,7 @@ exports.chinesechess = async function(req, res){
     const play = await Play.findOne({roomId:roomId}).sort({_id:-1}).limit(1);
     let ul = [];
     let isPlay = null;
-    if(play.pace == _MAP){
+    if(play.pace == _MAP ||play.pace == _KOREAN_MAP){
         isPlay = play.creator;
     }
     for(let x in userlist){
@@ -229,6 +230,9 @@ exports.chess_start = async function(req,res){
                                 
                 
                     const timestamp = new Date();
+                    const map = _MAP;
+                    if(room.game == '2')
+                        map = _KOREAN_MAP;
                     var data = {roomId:roomId,creator:decoded.user_id,pace:_MAP,createdAt:timestamp};
                     let tk = SHA256(prevHash(roomId) + timestamp + JSON.stringify(data));
                     data.token = tk;
