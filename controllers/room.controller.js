@@ -156,7 +156,8 @@ exports.list = async function (req, res) {
             "players" : players,
             "classRoom" : room[x].classRoom,
             "level" : room[x].level,
-            "bet" : room[x].bet
+            "bet" : room[x].bet,
+            "timeLimit" : room[x].timeLimit
         });
     }
     
