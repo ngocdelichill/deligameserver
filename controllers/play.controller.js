@@ -251,7 +251,7 @@ exports.chess_start = async function(req,res){
     
 }
 
-const timeLimit = [0,5000,180000];
+const timeLimit = [0,5000,10000,30000,180000];
 
 exports.chess_mankey = async function(req,res){
     //const url = new URL(req.headers.referer);
